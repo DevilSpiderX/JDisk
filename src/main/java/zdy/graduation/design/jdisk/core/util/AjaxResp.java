@@ -13,8 +13,7 @@ public class AjaxResp<T> implements Serializable {
     public static final int CODE_FAILURE = 1;           // 失败状态码
     public static final int CODE_ERROR = 1000;           // 错误状态码
     public static final int CODE_WARNING = 1001;         // 警告状态码
-    public static final int CODE_NOT_LOGIN = 1002;           // 未登录状态码
-    public static final int CODE_NOT_ADMIN = 1003;           // 无权限状态码
+    public static final int CODE_NOT_ADMIN = 1002;           // 无权限状态码
 
     private final Integer code;
     private String msg;
@@ -121,11 +120,6 @@ public class AjaxResp<T> implements Serializable {
 
     public static <T> AjaxResp<T> warning(String msg) {
         return new AjaxResp<>(CODE_WARNING, msg);
-    }
-
-    // 返回未登录
-    public static AjaxResp<Void> notLogin() {
-        return new AjaxResp<>(CODE_NOT_LOGIN, "未登录，请登录后再次访问");
     }
 
     // 返回无权限

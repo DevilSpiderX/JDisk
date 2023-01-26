@@ -13,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import zdy.graduation.design.jdisk.core.util.BytesHttpMessageConverter;
-import zdy.graduation.design.jdisk.core.util.FormToJSONHttpMessageConverter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -26,7 +25,6 @@ public class MyWebAppConfigurer implements WebMvcConfigurer, ErrorPageRegistrar 
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         converters.add(0, fastJsonHttpMessageConverter());
         converters.add(new BytesHttpMessageConverter());
-        converters.add(new FormToJSONHttpMessageConverter());
     }
 
     private FastJsonHttpMessageConverter fastJsonHttpMessageConverter() {
