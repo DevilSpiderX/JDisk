@@ -6,9 +6,15 @@ import java.io.Serializable;
 
 public class VirtualFile implements Serializable {
     @Serial
-    private static final long serialVersionUID = -32414638187832287L;
-
-    private Integer id;
+    private static final long serialVersionUID = -18015153136007934L;
+    /**
+     * 文件的路径
+     */
+    private String path;
+    /**
+     * 文件所在的驱动器ID
+     */
+    private Integer driverId;
     /**
      * 文件名
      */
@@ -17,10 +23,6 @@ public class VirtualFile implements Serializable {
      * F代表文件，D代表目录
      */
     private String type;
-    /**
-     * 文件的路径
-     */
-    private String path;
     /**
      * 文件所在的目录
      */
@@ -33,18 +35,22 @@ public class VirtualFile implements Serializable {
      * 文件的大小，目录的大小为null
      */
     private Long size;
-    /**
-     * 文件所在的驱动器ID
-     */
-    private Integer driverId;
 
 
-    public Integer getId() {
-        return id;
+    public String getPath() {
+        return path;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public Integer getDriverId() {
+        return driverId;
+    }
+
+    public void setDriverId(Integer driverId) {
+        this.driverId = driverId;
     }
 
     public String getName() {
@@ -61,14 +67,6 @@ public class VirtualFile implements Serializable {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
     }
 
     public String getDirectoryPath() {
@@ -95,25 +93,16 @@ public class VirtualFile implements Serializable {
         this.size = size;
     }
 
-    public Integer getDriverId() {
-        return driverId;
-    }
-
-    public void setDriverId(Integer driverId) {
-        this.driverId = driverId;
-    }
-
     @Override
     public String toString() {
         return "VirtualFile{" +
-                "id=" + id +
+                "path='" + path + '\'' +
+                ", driverId=" + driverId +
                 ", name='" + name + '\'' +
                 ", type='" + type + '\'' +
-                ", path='" + path + '\'' +
                 ", directoryPath='" + directoryPath + '\'' +
                 ", modified=" + modified +
                 ", size=" + size +
-                ", driverId=" + driverId +
                 '}';
     }
 }
