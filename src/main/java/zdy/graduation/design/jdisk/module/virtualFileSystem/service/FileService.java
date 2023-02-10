@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -182,55 +183,146 @@ public class FileService {
         return n > 0;
     }
 
+    public boolean addDirectory(String directoryName, String parent, int driverId) throws IOException {
+        VirtualDriver driver = getDriver(driverId);
+        //驱动器路径+文件所在的目录路径+文件名
+        Path path = Paths.get(driver.getPath(), parent, directoryName);
+        Files.createDirectories(path);
+
+        File directory = path.toFile();
+        VirtualFile virtualFile = new VirtualFile();
+        virtualFile.setPath(VirtualPath.get(parent, directoryName));
+        virtualFile.setDriverId(driver.getId());
+        virtualFile.setName(directoryName);
+        virtualFile.setType("D");
+        virtualFile.setParent(parent);
+        virtualFile.setModified(new Date(directory.lastModified()));
+
+        int n = suid.insert(virtualFile);
+        logger.info("驱动器{}添加目录{}{}", driverId, virtualFile.getPath(), n > 0 ? "成功" : "失败");
+        return n > 0;
+    }
+
     public boolean updateFile(String oldVirtualPath,
                               String newName,
                               String newParent,
                               int driverId) throws IOException {
         VirtualDriver driver = getDriver(driverId);
-        VirtualFile virtualFile = new VirtualFile();
-        virtualFile.setPath(oldVirtualPath);
-        virtualFile.setDriverId(driverId);
 
-        List<VirtualFile> selectList = suid.select(virtualFile);
+        VirtualFile entity = new VirtualFile();
+        entity.setPath(oldVirtualPath);
+        entity.setDriverId(driverId);
+        List<VirtualFile> selectList = suid.select(entity);
         if (selectList.isEmpty()) {
-            throw new FileNotFoundException();
+            throw new FileNotFoundException("数据库中找不到该文件");
         }
-        virtualFile = selectList.get(0);
-        //如果是目录的话，使用另一个方法
-        if (Objects.equals("D", virtualFile.getType())) {
-            return updateDirectory(newName, newParent, virtualFile, driver);
-        }
+        VirtualFile virtualFile = selectList.get(0);
+        boolean isDir = Objects.equals("D", virtualFile.getType());
 
         Path currentPath = Paths.get(driver.getPath(), oldVirtualPath);
         Path newPath = Paths.get(driver.getPath(), newParent, newName);
 
         if (Files.notExists(currentPath)) {
-            throw new FileNotFoundException();
+            throw new FileNotFoundException("%s不存在".formatted(currentPath));
         }
+        Files.createDirectories(newPath.getParent());
 
         File file = Files.move(currentPath, newPath, StandardCopyOption.REPLACE_EXISTING).toFile();
         VirtualFile newVirtualFile = new VirtualFile();
         newVirtualFile.setPath(VirtualPath.get(newParent, newName));
         newVirtualFile.setDriverId(driver.getId());
         newVirtualFile.setName(newName);
-        newVirtualFile.setType("F");
+        newVirtualFile.setType(virtualFile.getType());
         newVirtualFile.setParent(newParent);
         newVirtualFile.setModified(new Date(file.lastModified()));
-        newVirtualFile.setSize(file.length());
+        newVirtualFile.setSize(isDir ? null : file.length());
+
+        if (isDir) {
+            List<VirtualFile> childList = suid.select(
+                    new VirtualFile(),
+                    new ConditionImpl().op("parent", Op.like, virtualFile.getPath() + "%")
+            );
+            for (VirtualFile childVirtualFile : childList) {
+                VirtualFile newChildVirtualFile = new VirtualFile();
+                String newChildParent = childVirtualFile.getParent()
+                        .replace(virtualFile.getPath(), newVirtualFile.getPath());
+                newChildVirtualFile.setPath(VirtualPath.get(newChildParent, childVirtualFile.getName()));
+                newChildVirtualFile.setDriverId(childVirtualFile.getDriverId());
+                newChildVirtualFile.setName(childVirtualFile.getName());
+                newChildVirtualFile.setType(childVirtualFile.getType());
+                newChildVirtualFile.setParent(newChildParent);
+                newChildVirtualFile.setModified(childVirtualFile.getModified());
+                newChildVirtualFile.setSize(childVirtualFile.getSize());
+
+                if (suid.update(childVirtualFile, newChildVirtualFile) < 0) {
+                    logger.warn("驱动器{}更新{}{}为{}失败",
+                            driverId,
+                            Objects.equals("D", childVirtualFile.getType()) ? "目录" : "文件",
+                            childVirtualFile.getPath(),
+                            newChildVirtualFile.getPath());
+                }
+            }
+        }
 
         int n = suid.update(virtualFile, newVirtualFile);
-        logger.info("驱动器{}更新文件{}为{}{}",
+        logger.info("驱动器{}更新{}{}为{}{}",
                 driverId,
+                isDir ? "目录" : "文件",
                 virtualFile.getPath(),
                 newVirtualFile.getPath(),
                 n > 0 ? "成功" : "失败");
+
         return n > 0;
     }
 
-    private boolean updateDirectory(String newName,
-                                    String newParent,
-                                    VirtualFile virtualFile,
-                                    VirtualDriver driver) {
-        return false;
+    public boolean removeFile(String virtualPath, int driverId) throws IOException {
+        VirtualDriver driver = getDriver(driverId);
+
+        VirtualFile entity = new VirtualFile();
+        entity.setPath(virtualPath);
+        entity.setDriverId(driverId);
+        List<VirtualFile> selectList = suid.select(entity);
+        if (selectList.isEmpty()) {
+            throw new FileNotFoundException("数据库中找不到该文件");
+        }
+        VirtualFile virtualFile = selectList.get(0);
+        boolean isDir = Objects.equals("D", virtualFile.getType());
+
+        int n = 0;
+        if (isDir) {
+            n = suid.delete(new VirtualFile(),
+                    new ConditionImpl().op("parent", Op.like, virtualFile.getPath() + "%")
+            );
+        }
+        int nn = suid.delete(virtualFile);
+        logger.info("驱动器{}删除{}{}{}",
+                driverId,
+                isDir ? "目录" : "文件",
+                virtualFile.getPath(),
+                nn > 0 ? "成功" : "失败");
+        if (nn > 0) n++;
+        logger.info("驱动器{}共删除{}个记录", driverId, n);
+
+        Path path = Paths.get(driver.getPath(), virtualPath);
+        if (Files.notExists(path)) {
+            throw new FileNotFoundException("%s不存在".formatted(path));
+        }
+        Files.walkFileTree(path, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                Files.delete(path);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
+                if (e != null) {
+                    throw e;
+                }
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return nn > 0;
     }
 }
