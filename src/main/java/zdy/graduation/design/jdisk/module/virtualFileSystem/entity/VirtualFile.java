@@ -26,7 +26,7 @@ public class VirtualFile implements Serializable {
     /**
      * 文件所在的目录
      */
-    private String directoryPath;
+    private String parent;
     /**
      * 文件的最后修改日期
      */
@@ -69,12 +69,12 @@ public class VirtualFile implements Serializable {
         this.type = type;
     }
 
-    public String getDirectoryPath() {
-        return directoryPath;
+    public String getParent() {
+        return parent;
     }
 
-    public void setDirectoryPath(String directoryPath) {
-        this.directoryPath = directoryPath;
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 
     public Date getModified() {
@@ -100,7 +100,7 @@ public class VirtualFile implements Serializable {
                 ", driverId=" + driverId +
                 ", name='" + name + '\'' +
                 ", type='" + type + '\'' +
-                ", directoryPath='" + directoryPath + '\'' +
+                ", directoryPath='" + parent + '\'' +
                 ", modified=" + modified +
                 ", size=" + size +
                 '}';
