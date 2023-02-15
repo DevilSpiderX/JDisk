@@ -49,8 +49,7 @@ public class DriverService {
                              String remark,
                              boolean isPrivate,
                              int tokenTime,
-                             boolean enableFileOperator,
-                             boolean enableFileAnnoOperator)
+                             boolean enableFileOperator)
             throws DriverExistedException, DriverPathIsFileException {
         VirtualDriver driver = new VirtualDriver();
         driver.setKey(key);
@@ -65,7 +64,6 @@ public class DriverService {
         driver.setIsPrivate(isPrivate);
         driver.setTokenTime(tokenTime);
         driver.setEnableFileOperator(enableFileOperator);
-        driver.setEnableFileAnnoOperator(enableFileAnnoOperator);
         int n = suid.insert(driver, IncludeType.INCLUDE_EMPTY);
         logger.info("创建驱动器{}", n > 0 ? "成功" : "失败");
         return n > 0;
@@ -85,8 +83,7 @@ public class DriverService {
                                 String remark,
                                 boolean isPrivate,
                                 int tokenTime,
-                                boolean enableFileOperator,
-                                boolean enableFileAnnoOperator)
+                                boolean enableFileOperator)
             throws DriverPathIsFileException {
         checkPath(path);
         VirtualDriver driver = new VirtualDriver();
@@ -99,7 +96,6 @@ public class DriverService {
         driver.setIsPrivate(isPrivate);
         driver.setTokenTime(tokenTime);
         driver.setEnableFileOperator(enableFileOperator);
-        driver.setEnableFileAnnoOperator(enableFileAnnoOperator);
         int n = suid.updateById(driver, new ConditionImpl().setIncludeType(IncludeType.INCLUDE_EMPTY));
         logger.info("修改驱动器{}{}", id, n > 0 ? "成功" : "失败");
         return n > 0;

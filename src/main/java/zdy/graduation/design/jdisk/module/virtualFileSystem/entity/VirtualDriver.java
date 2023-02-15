@@ -40,11 +40,6 @@ public class VirtualDriver implements Serializable {
      * 是否允许文件操作
      */
     private Boolean enableFileOperator;
-    /**
-     * 是否允许非管理员进行文件操作
-     */
-    private Boolean enableFileAnnoOperator;
-
 
     public Integer getId() {
         return id;
@@ -118,14 +113,6 @@ public class VirtualDriver implements Serializable {
         this.enableFileOperator = enableFileOperator;
     }
 
-    public Boolean getEnableFileAnnoOperator() {
-        return enableFileAnnoOperator;
-    }
-
-    public void setEnableFileAnnoOperator(Boolean enableFileAnnoOperator) {
-        this.enableFileAnnoOperator = enableFileAnnoOperator;
-    }
-
     @Override
     public String toString() {
         return "VirtualDriver{" +
@@ -138,7 +125,6 @@ public class VirtualDriver implements Serializable {
                 ", isPrivate=" + isPrivate +
                 ", tokenTime=" + tokenTime +
                 ", enableFileOperator=" + enableFileOperator +
-                ", enableFileAnnoOperator=" + enableFileAnnoOperator +
                 '}';
     }
 }

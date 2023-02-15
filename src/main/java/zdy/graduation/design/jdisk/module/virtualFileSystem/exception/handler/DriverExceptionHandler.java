@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import zdy.graduation.design.jdisk.core.util.AjaxResp;
 import zdy.graduation.design.jdisk.module.virtualFileSystem.exception.DriverExistedException;
 import zdy.graduation.design.jdisk.module.virtualFileSystem.exception.DriverPathIsFileException;
+import zdy.graduation.design.jdisk.module.virtualFileSystem.exception.OperationNotAllowed;
 
 @ControllerAdvice
 public class DriverExceptionHandler {
@@ -15,6 +16,12 @@ public class DriverExceptionHandler {
     })
     @ResponseBody
     public AjaxResp<Void> handlerDriverException(Exception e) {
+        return AjaxResp.error(e.getMessage());
+    }
+
+    @ExceptionHandler({OperationNotAllowed.class})
+    @ResponseBody
+    public AjaxResp<Void> handlerOperationNotAllowed(OperationNotAllowed e) {
         return AjaxResp.error(e.getMessage());
     }
 }

@@ -51,6 +51,10 @@ public class SystemConfigService {
         return n > 0;
     }
 
+    public SystemConfig get(String key) {
+        return suid.selectOne(new SystemConfig(key));
+    }
+
     public List<SystemConfig> getAll() {
         return suid.select(new SystemConfig());
     }

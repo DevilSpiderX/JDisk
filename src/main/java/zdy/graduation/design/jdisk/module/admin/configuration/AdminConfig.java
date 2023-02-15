@@ -20,10 +20,12 @@ public class AdminConfig implements WebMvcConfigurer {
                 .addPathPatterns(
                         "/api/admin/**",
                         "/api/system/config/update",
-                        "/api/driver/**"
+                        "/api/driver/**",
+                        "/api/file/**"
                 ).excludePathPatterns(
                         "/api/admin/login",
-                        "/api/driver"
+                        "/api/driver/list",
+                        "/api/file/list"
                 );
     }
 }

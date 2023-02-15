@@ -3,6 +3,7 @@ package zdy.graduation.design.jdisk.module.virtualFileSystem.service;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.teasoft.bee.osql.Op;
@@ -11,6 +12,7 @@ import org.teasoft.honey.osql.core.BeeFactoryHelper;
 import org.teasoft.honey.osql.core.ConditionImpl;
 import zdy.graduation.design.jdisk.module.virtualFileSystem.entity.VirtualDriver;
 import zdy.graduation.design.jdisk.module.virtualFileSystem.entity.VirtualFile;
+import zdy.graduation.design.jdisk.module.virtualFileSystem.exception.OperationNotAllowed;
 import zdy.graduation.design.jdisk.module.virtualFileSystem.util.VirtualPath;
 
 import java.io.File;
@@ -32,8 +34,12 @@ public class FileService {
     public boolean addFile(MultipartFile uploadFile,
                            String fileName,
                            String parent,
-                           int driverId) throws IOException {
+                           int driverId) throws IOException, OperationNotAllowed {
         VirtualDriver driver = driverService.getDriver(driverId);
+        if (!driver.getEnableFileOperator()) {
+            throw new OperationNotAllowed(driver.getName());
+        }
+
         //驱动器路径+文件所在的目录路径+文件名
         Path path = Paths.get(driver.getPath(), parent, fileName);
         //将上传的文件放到指定位置
@@ -54,8 +60,13 @@ public class FileService {
         return n > 0;
     }
 
-    public boolean addDirectory(String directoryName, String parent, int driverId) throws IOException {
+    public boolean addDirectory(String directoryName, String parent, int driverId)
+            throws IOException, OperationNotAllowed {
         VirtualDriver driver = driverService.getDriver(driverId);
+        if (!driver.getEnableFileOperator()) {
+            throw new OperationNotAllowed(driver.getName());
+        }
+
         //驱动器路径+文件所在的目录路径+文件名
         Path path = Paths.get(driver.getPath(), parent, directoryName);
         Files.createDirectories(path);
@@ -77,8 +88,11 @@ public class FileService {
     public boolean updateFile(String oldVirtualPath,
                               String newName,
                               String newParent,
-                              int driverId) throws IOException {
+                              int driverId) throws IOException, OperationNotAllowed {
         VirtualDriver driver = driverService.getDriver(driverId);
+        if (!driver.getEnableFileOperator()) {
+            throw new OperationNotAllowed(driver.getName());
+        }
 
         VirtualFile entity = new VirtualFile();
         entity.setPath(oldVirtualPath);
@@ -146,8 +160,11 @@ public class FileService {
         return n > 0;
     }
 
-    public boolean removeFile(String virtualPath, int driverId) throws IOException {
+    public boolean removeFile(String virtualPath, int driverId) throws IOException, OperationNotAllowed {
         VirtualDriver driver = driverService.getDriver(driverId);
+        if (!driver.getEnableFileOperator()) {
+            throw new OperationNotAllowed(driver.getName());
+        }
 
         VirtualFile entity = new VirtualFile();
         entity.setPath(virtualPath);
@@ -210,5 +227,19 @@ public class FileService {
         entity.setDriverId(driverId);
 
         return suid.select(entity);
+    }
+
+    public org.springframework.core.io.Resource getFile(String virtualPath, VirtualDriver driver) {
+        if (driver == null) {
+            return null;
+        }
+        Path path = Paths.get(driver.getPath(), virtualPath);
+        if (Files.notExists(path)) {
+            return null;
+        }
+        if (!Files.isRegularFile(path)) {
+            return null;
+        }
+        return new FileSystemResource(path);
     }
 }

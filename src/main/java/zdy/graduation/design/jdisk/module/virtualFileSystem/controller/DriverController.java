@@ -21,11 +21,11 @@ public class DriverController {
     @Resource(name = "driverService")
     private DriverService driverService;
 
-    @RequestMapping
+    @RequestMapping("/list")
     @ResponseBody
-    public AjaxResp<?> get() {
+    public AjaxResp<?> list() {
         List<VirtualDriver> list = driverService.getAllDriver();
-        return AjaxResp.success(list);
+        return AjaxResp.success(list).setDataCount((long) list.size());
     }
 
     record AddRequest(String name,
@@ -34,8 +34,7 @@ public class DriverController {
                       String remark,
                       boolean isPrivate,
                       int tokenTime,
-                      boolean enableFileOperator,
-                      boolean enableFileAnnoOperator) {
+                      boolean enableFileOperator) {
     }
 
     @PostMapping("/add")
@@ -49,25 +48,16 @@ public class DriverController {
                 reqBody.remark(),
                 reqBody.isPrivate(),
                 reqBody.tokenTime(),
-                reqBody.enableFileOperator(),
-                reqBody.enableFileAnnoOperator()
+                reqBody.enableFileOperator()
         );
-        if (flag) {
-            return AjaxResp.success();
-        } else {
-            return AjaxResp.failure();
-        }
+        return flag ? AjaxResp.success() : AjaxResp.failure();
     }
 
     @PostMapping("/remove")
     @ResponseBody
     public AjaxResp<?> remove(@RequestParam("id") int id) {
         boolean flag = driverService.removeDriver(id);
-        if (flag) {
-            return AjaxResp.success();
-        } else {
-            return AjaxResp.failure();
-        }
+        return flag ? AjaxResp.success() : AjaxResp.failure();
     }
 
     record UpdateRequest(int id,
@@ -78,8 +68,7 @@ public class DriverController {
                          String remark,
                          boolean isPrivate,
                          int tokenTime,
-                         boolean enableFileOperator,
-                         boolean enableFileAnnoOperator) {
+                         boolean enableFileOperator) {
     }
 
     @PostMapping("/update")
@@ -94,14 +83,9 @@ public class DriverController {
                 reqBody.remark(),
                 reqBody.isPrivate(),
                 reqBody.tokenTime(),
-                reqBody.enableFileOperator(),
-                reqBody.enableFileAnnoOperator()
+                reqBody.enableFileOperator()
         );
-        if (flag) {
-            return AjaxResp.success();
-        } else {
-            return AjaxResp.failure();
-        }
+        return flag ? AjaxResp.success() : AjaxResp.failure();
     }
 
     @PostMapping("/scan")
