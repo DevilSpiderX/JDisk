@@ -15,6 +15,25 @@ public class SystemConfig implements Serializable {
 
     private String remark;
 
+    public SystemConfig() {
+    }
+
+    public SystemConfig(String key) {
+        this.key = key;
+    }
+
+    public SystemConfig(String key, String value, String remark) {
+        this.key = key;
+        this.value = value;
+        this.remark = remark;
+    }
+
+    public SystemConfig(Integer id, String key, String value, String remark) {
+        this.id = id;
+        this.key = key;
+        this.value = value;
+        this.remark = remark;
+    }
 
     public Integer getId() {
         return id;

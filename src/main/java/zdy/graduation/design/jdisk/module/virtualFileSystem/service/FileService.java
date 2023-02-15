@@ -325,4 +325,19 @@ public class FileService {
         });
         return nn > 0;
     }
+
+    public List<VirtualFile> getFileInDir(String dir, int driverId) {
+        if (dir == null) {
+            dir = "/";
+        }
+        if (!dir.startsWith("/")) {
+            dir = "/" + dir;
+        }
+
+        VirtualFile entity = new VirtualFile();
+        entity.setParent(dir);
+        entity.setDriverId(driverId);
+
+        return suid.select(entity);
+    }
 }
