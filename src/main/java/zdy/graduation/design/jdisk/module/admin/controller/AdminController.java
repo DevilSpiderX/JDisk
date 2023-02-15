@@ -12,8 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import zdy.graduation.design.jdisk.core.service.SystemConfigService;
 import zdy.graduation.design.jdisk.core.util.AjaxResp;
 import zdy.graduation.design.jdisk.module.admin.service.AdminService;
 
@@ -25,8 +23,6 @@ public class AdminController {
     private final Logger logger = LoggerFactory.getLogger(AdminController.class);
     @Resource(name = "adminService")
     private AdminService adminService;
-    @Resource(name = "systemConfigService")
-    private SystemConfigService systemConfigService;
 
     record LoginRequest(String username, String password) {
     }
@@ -65,29 +61,6 @@ public class AdminController {
                     )));
         } else {
             return ResponseEntity.ok(AjaxResp.failure("用户名密码错误"));
-        }
-    }
-
-    record SystemConfigRequest(String key, Object value) {
-    }
-
-    @PostMapping("/updateSystemConfig")
-    @ResponseBody
-    public AjaxResp<?> updateSystemConfig(@RequestBody SystemConfigRequest reqBody) {
-        String key = reqBody.key();
-        if (key == null) {
-            return AjaxResp.error("key不能为null");
-        }
-
-        String value = null;
-        if (reqBody.value() != null) {
-            value = String.valueOf(reqBody.value());
-        }
-        boolean flag = systemConfigService.update(key, value);
-        if (flag) {
-            return AjaxResp.success();
-        } else {
-            return AjaxResp.failure();
         }
     }
 }
