@@ -18,12 +18,12 @@ import java.util.regex.Pattern;
 @Controller
 @RequestMapping("/api/system/config")
 public class SystemConfigController {
-    @Resource(name = "systemConfigService")
+    @Resource
     private SystemConfigService systemConfigService;
 
-    @RequestMapping
+    @RequestMapping("/list")
     @ResponseBody
-    public AjaxResp<?> get() {
+    public AjaxResp<?> list() {
         List<SystemConfig> list = systemConfigService.getAll();
         Map<String, Object> map = new HashMap<>(list.size());
 

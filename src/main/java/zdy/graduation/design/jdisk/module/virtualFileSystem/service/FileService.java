@@ -1,9 +1,9 @@
 package zdy.graduation.design.jdisk.module.virtualFileSystem.service;
 
-import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.teasoft.bee.osql.Op;
@@ -24,18 +24,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-@Service("fileService")
+@Service
 public class FileService {
     private final Logger logger = LoggerFactory.getLogger(FileService.class);
     private final SuidRich suid = BeeFactoryHelper.getSuidRich();
-    @Resource(name = "driverService")
-    private DriverService driverService;
 
     public boolean addFile(MultipartFile uploadFile,
                            String fileName,
                            String parent,
-                           int driverId) throws IOException, OperationNotAllowed {
-        VirtualDriver driver = driverService.getDriver(driverId);
+                           VirtualDriver driver) throws IOException, OperationNotAllowed {
         if (!driver.getEnableFileOperator()) {
             throw new OperationNotAllowed(driver.getName());
         }
@@ -56,13 +53,12 @@ public class FileService {
         virtualFile.setSize(file.length());
 
         int n = suid.insert(virtualFile);
-        logger.info("驱动器{}添加文件{}{}", driverId, virtualFile.getPath(), n > 0 ? "成功" : "失败");
+        logger.info("驱动器({})添加文件{}{}", driver.getName(), virtualFile.getPath(), n > 0 ? "成功" : "失败");
         return n > 0;
     }
 
-    public boolean addDirectory(String directoryName, String parent, int driverId)
+    public boolean addDirectory(String directoryName, String parent, VirtualDriver driver)
             throws IOException, OperationNotAllowed {
-        VirtualDriver driver = driverService.getDriver(driverId);
         if (!driver.getEnableFileOperator()) {
             throw new OperationNotAllowed(driver.getName());
         }
@@ -81,18 +77,19 @@ public class FileService {
         virtualFile.setModified(new Date(directory.lastModified()));
 
         int n = suid.insert(virtualFile);
-        logger.info("驱动器{}添加目录{}{}", driverId, virtualFile.getPath(), n > 0 ? "成功" : "失败");
+        logger.info("驱动器({})添加目录{}{}", driver.getName(), virtualFile.getPath(), n > 0 ? "成功" : "失败");
         return n > 0;
     }
 
     public boolean updateFile(String oldVirtualPath,
                               String newName,
                               String newParent,
-                              int driverId) throws IOException, OperationNotAllowed {
-        VirtualDriver driver = driverService.getDriver(driverId);
+                              VirtualDriver driver) throws IOException, OperationNotAllowed {
         if (!driver.getEnableFileOperator()) {
             throw new OperationNotAllowed(driver.getName());
         }
+
+        int driverId = driver.getId();
 
         VirtualFile entity = new VirtualFile();
         entity.setPath(oldVirtualPath);
@@ -140,8 +137,8 @@ public class FileService {
                 newChildVirtualFile.setSize(childVirtualFile.getSize());
 
                 if (suid.update(childVirtualFile, newChildVirtualFile) < 0) {
-                    logger.warn("驱动器{}更新{}{}为{}失败",
-                            driverId,
+                    logger.warn("驱动器({})更新{}{}为{}失败",
+                            driver.getName(),
                             Objects.equals("D", childVirtualFile.getType()) ? "目录" : "文件",
                             childVirtualFile.getPath(),
                             newChildVirtualFile.getPath());
@@ -150,8 +147,8 @@ public class FileService {
         }
 
         int n = suid.update(virtualFile, newVirtualFile);
-        logger.info("驱动器{}更新{}{}为{}{}",
-                driverId,
+        logger.info("驱动器({})更新{}{}为{}{}",
+                driver.getName(),
                 isDir ? "目录" : "文件",
                 virtualFile.getPath(),
                 newVirtualFile.getPath(),
@@ -160,11 +157,12 @@ public class FileService {
         return n > 0;
     }
 
-    public boolean removeFile(String virtualPath, int driverId) throws IOException, OperationNotAllowed {
-        VirtualDriver driver = driverService.getDriver(driverId);
+    public boolean removeFile(String virtualPath, VirtualDriver driver) throws IOException, OperationNotAllowed {
         if (!driver.getEnableFileOperator()) {
             throw new OperationNotAllowed(driver.getName());
         }
+
+        int driverId = driver.getId();
 
         VirtualFile entity = new VirtualFile();
         entity.setPath(virtualPath);
@@ -183,13 +181,13 @@ public class FileService {
             );
         }
         int nn = suid.delete(virtualFile);
-        logger.info("驱动器{}删除{}{}{}",
-                driverId,
+        logger.info("驱动器({})删除{}{}{}",
+                driver.getName(),
                 isDir ? "目录" : "文件",
                 virtualFile.getPath(),
                 nn > 0 ? "成功" : "失败");
         if (nn > 0) n++;
-        logger.info("驱动器{}共删除{}个记录", driverId, n);
+        logger.info("驱动器({})共删除{}个记录", driver.getName(), n);
 
         Path path = Paths.get(driver.getPath(), virtualPath);
         if (Files.notExists(path)) {
@@ -214,7 +212,7 @@ public class FileService {
         return nn > 0;
     }
 
-    public List<VirtualFile> getFileInDir(String dir, int driverId) {
+    public List<VirtualFile> getFileInDir(String dir, VirtualDriver driver) {
         if (dir == null) {
             dir = "/";
         }
@@ -224,12 +222,12 @@ public class FileService {
 
         VirtualFile entity = new VirtualFile();
         entity.setParent(dir);
-        entity.setDriverId(driverId);
+        entity.setDriverId(driver.getId());
 
         return suid.select(entity);
     }
 
-    public org.springframework.core.io.Resource getFile(String virtualPath, VirtualDriver driver) {
+    public Resource getFileResource(String virtualPath, VirtualDriver driver) {
         if (driver == null) {
             return null;
         }

@@ -21,7 +21,7 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 public class AdminController {
     private final Logger logger = LoggerFactory.getLogger(AdminController.class);
-    @Resource(name = "adminService")
+    @Resource
     private AdminService adminService;
 
     record LoginRequest(String username, String password) {

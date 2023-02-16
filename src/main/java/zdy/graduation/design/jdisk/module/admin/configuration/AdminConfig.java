@@ -18,14 +18,13 @@ public class AdminConfig implements WebMvcConfigurer {
         registry.addInterceptor(adminInterceptor)
                 .order(0)
                 .addPathPatterns(
-                        "/api/admin/**",
                         "/api/system/config/update",
-                        "/api/driver/**",
-                        "/api/file/**"
+                        "/api/driver/operate/**",
+                        "/api/file/operate/**",
+                        "/api/direct/link/remove/*"
                 ).excludePathPatterns(
-                        "/api/admin/login",
                         "/api/driver/list",
-                        "/api/file/list"
+                        "/api/file/list/**"
                 );
     }
 }

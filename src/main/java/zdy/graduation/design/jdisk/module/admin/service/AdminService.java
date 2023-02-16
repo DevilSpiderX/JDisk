@@ -9,7 +9,7 @@ import zdy.graduation.design.jdisk.core.entity.SystemConfig;
 
 import java.util.Objects;
 
-@Service("adminService")
+@Service
 public class AdminService {
     private final Logger logger = LoggerFactory.getLogger(AdminService.class);
     private final SuidRich suid = BeeFactoryHelper.getSuidRich();

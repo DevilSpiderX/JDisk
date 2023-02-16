@@ -14,19 +14,22 @@ import zdy.graduation.design.jdisk.module.virtualFileSystem.service.DriverServic
 @Controller
 @RequestMapping("/api/signature")
 public class SignatureController {
-    @Resource(name = "driverService")
+    @Resource
     private DriverService driverService;
-    @Resource(name = "signatureService")
+    @Resource
     private SignatureService signatureService;
 
-
-    record ApplyRequest(String path, int driverId) {
+    record ApplyRequest(String path, String driverKey) {
     }
 
     @PostMapping("/apply")
     @ResponseBody
     public AjaxResp<?> apply(@RequestBody ApplyRequest reqBody) {
-        VirtualDriver driver = driverService.getDriver(reqBody.driverId());
+        VirtualDriver driver = driverService.getDriver(reqBody.driverKey());
+        if (driver == null) {
+            return AjaxResp.error("驱动器%s不存在".formatted(reqBody.driverKey()));
+        }
+
         String sign = signatureService.apply(reqBody.path(), driver);
         if (sign == null) {
             return AjaxResp.error();

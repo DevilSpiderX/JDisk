@@ -22,6 +22,6 @@ public class DriverExceptionHandler {
     @ExceptionHandler({OperationNotAllowed.class})
     @ResponseBody
     public AjaxResp<Void> handlerOperationNotAllowed(OperationNotAllowed e) {
-        return AjaxResp.error(e.getMessage());
+        return AjaxResp.error("驱动器（%s）不允许进行操作".formatted(e.getDriverName()));
     }
 }

@@ -16,11 +16,11 @@ import zdy.graduation.design.jdisk.module.signature.service.SignatureService;
 @Controller
 @RequestMapping("/dl/{driverKey}")
 public class DownloadController {
-    @Resource(name = "driverService")
+    @Resource
     private DriverService driverService;
-    @Resource(name = "fileService")
+    @Resource
     private FileService fileService;
-    @Resource(name = "signatureService")
+    @Resource
     private SignatureService signatureService;
 
     @RequestMapping("/{*path}")
@@ -39,7 +39,7 @@ public class DownloadController {
                 return ResponseEntity.ok(AjaxResp.failure("无效签名"));
             }
         }
-        org.springframework.core.io.Resource resource = fileService.getFile(path, driver);
+        org.springframework.core.io.Resource resource = fileService.getFileResource(path, driver);
         if (resource == null) {
             return ResponseEntity.ok(AjaxResp.failure("文件不存在"));
         }

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service("signatureService")
+@Service
 public class SignatureService {
     private final Logger logger = LoggerFactory.getLogger(SignatureService.class);
     private final Map<String, Date> signAndEndDate = new ConcurrentHashMap<>();

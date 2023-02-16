@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service("driverService")
+@Service
 public class DriverService {
     private final Logger logger = LoggerFactory.getLogger(DriverService.class);
     private final SuidRich suid = BeeFactoryHelper.getSuidRich();
