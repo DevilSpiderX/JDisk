@@ -7,29 +7,9 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
-    AddModal: typeof import('./src/components/query/components/AddModal.vue')['default']
-    BaseCard: typeof import('./src/components/controller/components/BaseCard.vue')['default']
-    ControllerRoute: typeof import('./src/components/controller/ControllerRoute.vue')['default']
-    CpuCard: typeof import('./src/components/controller/components/CpuCard.vue')['default']
-    DiskCard: typeof import('./src/components/controller/components/DiskCard.vue')['default']
-    DisplayModal: typeof import('./src/components/query/components/DisplayModal.vue')['default']
-    DSXMenu: typeof import('./src/components/dsx-menu/DSXMenu.vue')['default']
-    DSXMenuItem: typeof import('./src/components/dsx-menu/components/DSXMenuItem.vue')['default']
+    AdminRoute: typeof import('./src/components/admin/AdminRoute.vue')['default']
     IndexRoute: typeof import('./src/components/index/IndexRoute.vue')['default']
-    LoginRoute: typeof import('./src/components/login/LoginRoute.vue')['default']
-    LogMonitor: typeof import('./src/components/log/components/LogMonitor.vue')['default']
-    LogRoute: typeof import('./src/components/log/LogRoute.vue')['default']
-    MemoryCard: typeof import('./src/components/controller/components/MemoryCard.vue')['default']
-    MySwitch: typeof import('./src/components/v2ray/components/MySwitch.vue')['default']
-    NetworkCard: typeof import('./src/components/controller/components/NetworkCard.vue')['default']
-    QueryRoute: typeof import('./src/components/query/QueryRoute.vue')['default']
-    QueryTd: typeof import('./src/components/query/components/QueryTd.vue')['default']
-    RegisterRoute: typeof import('./src/components/register/RegisterRoute.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    UpdateModal: typeof import('./src/components/query/components/UpdateModal.vue')['default']
-    UpdatePwdRoute: typeof import('./src/components/update-pwd/UpdatePwdRoute.vue')['default']
-    V2rayRoute: typeof import('./src/components/v2ray/V2rayRoute.vue')['default']
-    WelcomeRoute: typeof import('./src/components/welcome/WelcomeRoute.vue')['default']
   }
 }

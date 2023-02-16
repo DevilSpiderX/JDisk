@@ -1,12 +1,18 @@
-import { createRouter, createWebHashHistory, RouteLocationNormalized, RouteRecordRaw } from "vue-router";
+import { createRouter, createWebHistory, RouteLocationNormalized, RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
     {
         name: "index",
-        path: "/index",
+        path: "/:driverKey?/:path(.*)*",
         component: () => import("@/components/index/IndexRoute.vue"),
         meta: { title: "JDisk|首页" }
-    }
+    },
+    {
+        name: "admin",
+        path: "/admin",
+        component: () => import("@/components/admin/AdminRoute.vue"),
+        meta: { title: "JDisk|管理员" }
+    },
 ]
 
 if (Object.hasOwn === undefined) {
@@ -16,7 +22,7 @@ if (Object.hasOwn === undefined) {
 }
 
 const router = createRouter({
-    history: createWebHashHistory(),
+    history: createWebHistory(),
     routes: routes
 });
 

@@ -1,15 +1,19 @@
 <script setup>
-import { useAppConfigs } from "./store/AppConfigsStore";
+import { useAppConfigs } from "@/store/AppConfigsStore";
+import { useRoute } from "vue-router";
 
 const appConfigs = useAppConfigs();
+
+const route = useRoute();
+
+console.log(route);
+
 </script>
 
 <template>
     <div>
 
-    </div>
+</div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>
