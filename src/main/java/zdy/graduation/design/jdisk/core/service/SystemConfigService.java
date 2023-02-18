@@ -3,8 +3,10 @@ package zdy.graduation.design.jdisk.core.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.teasoft.bee.osql.IncludeType;
 import org.teasoft.bee.osql.SuidRich;
 import org.teasoft.honey.osql.core.BeeFactoryHelper;
+import org.teasoft.honey.osql.core.ConditionImpl;
 import zdy.graduation.design.jdisk.core.entity.SystemConfig;
 
 import java.util.List;
@@ -46,7 +48,7 @@ public class SystemConfigService {
             return false;
         }
         SystemConfig updateEntity = new SystemConfig(old.getId(), key, value, old.getRemark());
-        int n = suid.update(old, updateEntity);
+        int n = suid.updateById(updateEntity, new ConditionImpl().setIncludeType(IncludeType.INCLUDE_BOTH));
         logger.info("更新系统配置{}为{}{}", key, value, n > 0 ? "成功" : "失败");
         return n > 0;
     }
@@ -57,5 +59,22 @@ public class SystemConfigService {
 
     public List<SystemConfig> getAll() {
         return suid.select(new SystemConfig());
+    }
+
+    public boolean install(String siteName, String username, String password, String domain) {
+        SystemConfig installed = get("installed");
+        if (Boolean.parseBoolean(installed.getValue())) {
+            return false;
+        }
+
+        boolean flag0 = update("siteName", siteName);
+        boolean flag1 = update("username", username);
+        boolean flag2 = update("password", password);
+        boolean flag3 = update("domain", domain);
+        boolean flag4 = false;
+        if (flag0 && flag1 && flag2 && flag3) {
+            flag4 = update("installed", String.valueOf(true));
+        }
+        return flag4;
     }
 }

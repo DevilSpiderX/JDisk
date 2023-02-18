@@ -40,9 +40,9 @@ export const useAppConfigs = defineStore("appConfigs", () => {
         themeColorMetaElement.setAttribute("content", statusBarColor);
     });
 
-    function backgroundColor2StatusBarColor() {
-        statusBarColor.value = window.getComputedStyle(document.body).backgroundColor;
-    }
+    watchEffect(() => {
+        statusBarColor.value = darkTheme.value ? "#17171a" : "#ffffff";
+    });
 
     return {
         client,
@@ -50,7 +50,6 @@ export const useAppConfigs = defineStore("appConfigs", () => {
         themeName,
         themeFollowSystem,
         statusBarColor,
-        backgroundColor2StatusBarColor,
         isTouchDevice: ref<boolean>("ontouchstart" in window && navigator.maxTouchPoints !== 0)
     }
 }, {

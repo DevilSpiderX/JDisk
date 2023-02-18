@@ -22,6 +22,11 @@ public class SystemConfig implements Serializable {
         this.key = key;
     }
 
+    public SystemConfig(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
     public SystemConfig(String key, String value, String remark) {
         this.key = key;
         this.value = value;

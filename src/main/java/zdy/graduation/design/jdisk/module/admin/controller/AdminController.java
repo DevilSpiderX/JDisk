@@ -12,7 +12,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import zdy.graduation.design.jdisk.core.util.AjaxResp;
+import zdy.graduation.design.jdisk.module.admin.interceptor.AdminInterceptor;
 import zdy.graduation.design.jdisk.module.admin.service.AdminService;
 
 import java.util.Map;
@@ -62,5 +64,18 @@ public class AdminController {
         } else {
             return ResponseEntity.ok(AjaxResp.failure("用户名密码错误"));
         }
+    }
+
+    @PostMapping("/logout")
+    @ResponseBody
+    public AjaxResp<?> logout(HttpSession session) {
+        session.setAttribute("admin", false);
+        return AjaxResp.success();
+    }
+
+    @PostMapping("/status")
+    @ResponseBody
+    public AjaxResp<?> status(HttpSession session) {
+        return AjaxResp.success(AdminInterceptor.isAdmin(session));
     }
 }

@@ -6,7 +6,6 @@ const appConfigs = useAppConfigs();
 
 const route = useRoute();
 
-console.log(route);
 
 </script>
 

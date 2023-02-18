@@ -1,4 +1,4 @@
-import { AxiosResponse, AxiosProgressEvent } from "axios";
+import { AxiosProgressEvent } from "axios";
 export interface Resp {
     code: number,
     msg: string,
@@ -8,11 +8,14 @@ export interface Resp {
 
 export interface Http {
     admin: {
-        login: (username: string, password: string) => Promise<Resp>
+        login: (username: string, password: string) => Promise<Resp>,
+        logout: () => Promise<Resp>,
+        status: () => Promise<Resp>
     },
     systemConfig: {
         list: () => Promise<Resp>,
-        update: (key: string, value: number | boolean | string) => Promise<Resp>
+        update: (key: string, value: number | boolean | string) => Promise<Resp>,
+        install: (siteName: string, username: string, password: string, domain: string) => Promise<Resp>
     },
     directLink: {
         list: () => Promise<Resp>,

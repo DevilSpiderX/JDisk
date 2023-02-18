@@ -30,7 +30,10 @@ public class SystemConfigController {
         Pattern numberPattern = Pattern.compile("\\d+");
         Pattern booleanPattern = Pattern.compile("true|false");
         list.forEach(config -> {
+            if (config.getKey().equals("username") || config.getKey().equals("password")) return;
             String value = config.getValue();
+            if (value == null) return;
+
             if (numberPattern.matcher(value).matches()) {
                 map.put(config.getKey(), Integer.parseInt(value));
             } else if (booleanPattern.matcher(value).matches()) {
@@ -64,5 +67,18 @@ public class SystemConfigController {
         } else {
             return AjaxResp.failure();
         }
+    }
+
+    record InstallRequest(String siteName, String username, String password, String domain) {
+    }
+
+    @PostMapping("/install")
+    @ResponseBody
+    public AjaxResp<?> install(@RequestBody InstallRequest reqBody) {
+        boolean flag = systemConfigService.install(reqBody.siteName(),
+                reqBody.username(),
+                reqBody.password(),
+                reqBody.domain());
+        return flag ? AjaxResp.success() : AjaxResp.failure();
     }
 }

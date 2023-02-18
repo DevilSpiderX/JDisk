@@ -9,6 +9,9 @@ declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AdminRoute: typeof import('./src/components/admin/AdminRoute.vue')['default']
     IndexRoute: typeof import('./src/components/index/IndexRoute.vue')['default']
+    InstallRoute: typeof import('./src/components/install/InstallRoute.vue')['default']
+    LoginRoute: typeof import('./src/components/admin/LoginRoute.vue')['default']
+    Normal: typeof import('./src/components/admin/components/normal/Normal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

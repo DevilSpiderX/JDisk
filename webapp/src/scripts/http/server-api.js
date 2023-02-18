@@ -5,6 +5,14 @@ const http = {
         async login(username, password) {
             const resp = await httpInstance.post("/api/admin/login", { username, password });
             return resp.data;
+        },
+        async logout() {
+            const resp = await httpInstance.post("/api/admin/logout");
+            return resp.data;
+        },
+        async status() {
+            const resp = await httpInstance.post("/api/admin/status");
+            return resp.data;
         }
     },
     systemConfig: {
@@ -14,6 +22,13 @@ const http = {
         },
         async update(key, value) {
             const resp = await httpInstance.post("/api/system/config/update", { key, value });
+            return resp.data;
+        },
+        async install(siteName, username, password, domain) {
+            const postBody = {
+                siteName, username, password, domain
+            };
+            const resp = await httpInstance.post("/api/system/config/install", postBody);
             return resp.data;
         }
     },
