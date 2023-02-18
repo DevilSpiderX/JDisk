@@ -31,7 +31,7 @@ const pageHeader = reactive({
         },
         set: value => {
             if (value.length > 0) {
-                router.push({ name: `admin_${value}` });
+                router.push({ name: `admin_${value[0]}` });
             }
         }
     })
@@ -100,7 +100,7 @@ function back_to_index() {
                                 </ARow>
                             </AMenuItem>
                             <AMenuItem key="normal">基本设置</AMenuItem>
-                            <AMenuItem key="driver">驱动器设置</AMenuItem>
+                            <AMenuItem key="driverList">驱动器设置</AMenuItem>
                             <AMenuItem key="display">显示设置</AMenuItem>
                             <AMenuItem key="directLink">直链管理</AMenuItem>
                         </AMenu>
@@ -154,7 +154,7 @@ function back_to_index() {
                 <div class="collapseMenu" v-show="collapseMenu.show">
                     <AMenu v-model:selected-keys="pageHeader.selectedKeys" @menu-item-click="collapseMenu.show = false">
                         <AMenuItem key="normal">基本设置</AMenuItem>
-                        <AMenuItem key="driver">驱动器设置</AMenuItem>
+                        <AMenuItem key="driverList">驱动器设置</AMenuItem>
                         <AMenuItem key="display">显示设置</AMenuItem>
                         <AMenuItem key="directLink">直链管理</AMenuItem>
                     </AMenu>

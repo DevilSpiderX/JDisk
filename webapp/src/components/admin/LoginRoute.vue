@@ -70,8 +70,8 @@ onMounted(async () => {
                 <ARow justify="center">
                     <ACol class="register-col">
                         <AForm :model="form" @submit="form_submit">
-                            <h1 style="text-align: center; font-size: 2.5rem">
-                                登&nbsp;&nbsp;录
+                            <h1 style="text-align: center; font-size: 2.2rem">
+                                管 理 员 登 录
                             </h1>
                             <AFormItem field="username" hide-label>
                                 <AInput v-model="form.username" class="my-input" placeholder="账号" allow-clear
@@ -92,6 +92,10 @@ onMounted(async () => {
                             <ARow class="button-row" justify="space-around">
                                 <AButton type="primary" size="large" html-type="submit">
                                     登 录
+                                </AButton>
+                                <AButton type="primary" size="large" html-type="button"
+                                    @click="$router.push({ name: 'index' })">
+                                    返 回
                                 </AButton>
                             </ARow>
                         </AForm>

@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteLocationNormalized, RouteRecordRaw } from "vue-router";
+import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
     {
@@ -29,27 +29,33 @@ const routes: RouteRecordRaw[] = [
                 meta: { selectedKey: "normal" }
             },
             {
-                name: "admin_driver",
-                path: "driver",
-                component: () => import("@/components/index/IndexRoute.vue"),
-                meta: { selectedKey: "driver" }
+                name: "admin_driverList",
+                path: "driver-list",
+                component: () => import("@/components/admin/components/driver/DriverList.vue"),
+                meta: { selectedKey: "driverList" }
+            },
+            {
+                name: "admin_driverEdit",
+                path: "driver-edit",
+                component: () => import("@/components/admin/components/driver/DriverEdit.vue"),
+                meta: { selectedKey: "driverEdit" }
             },
             {
                 name: "admin_display",
                 path: "display",
-                component: () => import("@/components/index/IndexRoute.vue"),
+                component: () => import("@/components/admin/components/display/Display.vue"),
                 meta: { selectedKey: "display" }
             },
             {
                 name: "admin_directLink",
                 path: "direct-link",
-                component: () => import("@/components/index/IndexRoute.vue"),
+                component: () => import("@/components/admin/components/direct-link/DirectLink.vue"),
                 meta: { selectedKey: "directLink" }
             },
             {
                 name: "admin_updatePassword",
                 path: "update-password",
-                component: () => import("@/components/index/IndexRoute.vue"),
+                component: () => import("@/components/admin/components/update-password/UpdatePassword.vue"),
                 meta: { selectedKey: "updatePassword" }
             }
         ]

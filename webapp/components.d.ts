@@ -8,11 +8,16 @@ export {}
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AdminRoute: typeof import('./src/components/admin/AdminRoute.vue')['default']
+    DirectLink: typeof import('./src/components/admin/components/direct-link/DirectLink.vue')['default']
+    Display: typeof import('./src/components/admin/components/display/Display.vue')['default']
+    DriverEdit: typeof import('./src/components/admin/components/driver/DriverEdit.vue')['default']
+    DriverList: typeof import('./src/components/admin/components/driver/DriverList.vue')['default']
     IndexRoute: typeof import('./src/components/index/IndexRoute.vue')['default']
     InstallRoute: typeof import('./src/components/install/InstallRoute.vue')['default']
     LoginRoute: typeof import('./src/components/admin/LoginRoute.vue')['default']
     Normal: typeof import('./src/components/admin/components/normal/Normal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    UpdatePassword: typeof import('./src/components/admin/components/update-password/UpdatePassword.vue')['default']
   }
 }
