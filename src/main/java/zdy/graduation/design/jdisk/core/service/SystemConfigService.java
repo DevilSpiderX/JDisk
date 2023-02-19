@@ -35,7 +35,8 @@ public class SystemConfigService {
                 new SystemConfig("customAudioSuffix", "mp3,wav,wma,ogg,aac,flac,m4a", "自定义音频文件后缀格式"),
                 new SystemConfig("customTextSuffix", "scss,sass,kt,gitignore,bat,properties,yml,css,js,md,xml,txt,py,go,html,less,php,rb,rust,script,java,sh,sql", "自定义文本文件后缀格式"),
                 new SystemConfig("rootShowStorage", String.valueOf(false), "根目录是否显示所有存储源"),
-                new SystemConfig("maxFileUploads", "3", "最大同时上传文件数")
+                new SystemConfig("maxFileUploads", "3", "最大同时上传文件数"),
+                new SystemConfig("showLogin", String.valueOf(true), "是否在前台显示登陆按钮")
         };
 
         suid.insert(configs);

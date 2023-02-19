@@ -6,13 +6,22 @@ const appConfigs = useAppConfigs();
 
 const route = useRoute();
 
+const props = defineProps({
+    driverKey: {
+        type: String
+    },
+    path: {
+        type: Array,
+        default: []
+    }
+});
 
 </script>
 
 <template>
     <div>
 
-</div>
+    </div>
 </template>
 
 <style scoped></style>

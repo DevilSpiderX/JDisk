@@ -5,7 +5,27 @@ const routes: RouteRecordRaw[] = [
         name: "index",
         path: "/:driverKey?/:path(.*)*",
         component: () => import("@/components/index/IndexRoute.vue"),
-        meta: { title: "JDisk|首页" }
+        meta: { title: "JDisk|首页" },
+        props: route => {
+            let driverKey;
+            if (route.params.driverKey === "") {
+                driverKey = undefined;
+            } else {
+                driverKey = route.params.driverKey;
+            }
+
+            let path;
+            if (route.params.path instanceof Array) {
+                path = route.params.path;
+            } else {
+                path = undefined;
+            }
+
+
+            return {
+                driverKey, path
+            }
+        }
     },
     {
         name: "login",
@@ -36,9 +56,16 @@ const routes: RouteRecordRaw[] = [
             },
             {
                 name: "admin_driverEdit",
-                path: "driver-edit",
+                path: "driver-edit/:driverId?",
                 component: () => import("@/components/admin/components/driver/DriverEdit.vue"),
-                meta: { selectedKey: "driverEdit" }
+                meta: { selectedKey: "driverEdit" },
+                props: route => {
+                    if (route.params.driverId) {
+                        return {
+                            id: Number(route.params.driverId)
+                        }
+                    }
+                }
             },
             {
                 name: "admin_display",

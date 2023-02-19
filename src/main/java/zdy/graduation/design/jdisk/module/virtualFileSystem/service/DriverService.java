@@ -144,13 +144,17 @@ public class DriverService {
 
     private int addTreeToSQL(@NotNull FileTree node) {
         List<FileTree> children = node.getChildren();
-        if (children == null) return 0;
-        int n = 0;
+        if (children == null || children.isEmpty()) return 0;
+        int count = 0;
         List<VirtualFile> insertList = new ArrayList<>();
         for (FileTree child : children) {
             insertList.add(child.getFile());
-            n += addTreeToSQL(child);
+            count += addTreeToSQL(child);
         }
-        return n + suid.insert(insertList, IncludeType.INCLUDE_BOTH);
+        int n = suid.insert(insertList);
+        if (n < 0) {
+            logger.warn("驱动器({})扫描目录{}出现问题", node.getDriver().getName(), node.getFile().getPath());
+        }
+        return count + n > 0 ? n : 0;
     }
 }

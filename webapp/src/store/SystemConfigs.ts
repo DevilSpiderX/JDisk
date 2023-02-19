@@ -2,16 +2,17 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 interface ValuesType {
-    installed: boolean | undefined,
-    siteName: string | undefined,
-    domain: string | undefined,
-    avatar: string | undefined,
-    customVideoSuffix: string | undefined,
-    customImageSuffix: string | undefined,
-    customAudioSuffix: string | undefined,
-    customTextSuffix: string | undefined,
-    rootShowStorage: boolean | undefined,
-    maxFileUploads: number | undefined
+    installed?: boolean,
+    siteName?: string,
+    domain?: string,
+    avatar?: string,
+    customVideoSuffix?: string,
+    customImageSuffix?: string,
+    customAudioSuffix?: string,
+    customTextSuffix?: string,
+    rootShowStorage?: boolean,
+    maxFileUploads?: number,
+    showLogin?: boolean
 }
 
 export const useSystemConfigs = defineStore("systemConfigs", () => {
@@ -26,6 +27,7 @@ export const useSystemConfigs = defineStore("systemConfigs", () => {
         customTextSuffix: undefined,
         rootShowStorage: undefined,
         maxFileUploads: undefined,
+        showLogin: undefined
     });
 
     return {

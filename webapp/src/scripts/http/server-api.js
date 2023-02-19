@@ -91,7 +91,9 @@ const http = {
                 return resp.data;
             },
             async scan(id) {
-                const resp = await httpInstance.post(`/api/driver/operate/scan?id=${id}`);
+                const resp = await httpInstance.post(`/api/driver/operate/scan?id=${id}`, undefined, {
+                    timeout: 300000
+                });
                 return resp.data;
             }
         }

@@ -1,9 +1,10 @@
 <script setup>
+import { useBodyNoScrollbar } from "@/hooks/body";
 import { http } from "@/scripts/http";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useSystemConfigs } from "@/store/SystemConfigs";
 import { Message, Scrollbar as AScrollbar } from "@arco-design/web-vue";
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const appConfigs = useAppConfigs(),
@@ -38,18 +39,23 @@ const pageHeader = reactive({
 });
 
 const header = ref();
+const headerResizeObserver = new ResizeObserver(() => {
+    const rect = header.value?.$el.getBoundingClientRect();
+    headerHeight.value = rect ? rect.height : 0;
+});
 const headerHeight = ref(0);
 onMounted(async () => {
     const resp = await http.admin.status();
     console.log("Admin,Status", resp);
     if (resp.code === 0 && !resp.data) {
         router.push({ name: "login" });
-    } else if (header.value) {
-        new ResizeObserver(() => {
-            const rect = header.value.$el.getBoundingClientRect();
-            headerHeight.value = rect.height;
-        }).observe(header.value.$el);
+    } else if (header.value && header.value.$el) {
+        headerResizeObserver.observe(header.value.$el);
     }
+});
+
+onUnmounted(() => {
+    headerResizeObserver?.disconnect();
 });
 
 const contentScrollbarStyle = reactive({
@@ -80,6 +86,8 @@ async function on_logout_click() {
 function back_to_index() {
     router.push("/");
 }
+
+useBodyNoScrollbar();
 
 </script>
 
