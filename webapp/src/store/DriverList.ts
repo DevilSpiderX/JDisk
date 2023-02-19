@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { http } from "@/scripts/http";
 
-interface ValueType {
+export interface ValueType {
     id: number,
     enable: boolean,
     name: string,
@@ -26,10 +26,19 @@ export const useDriverList = defineStore("driverList", () => {
 
     updateList();
 
-    function getDriver(id: number) {
-        for (const driver of value.value) {
-            if (driver.id === id) {
-                return driver;
+    function getDriver(id_key: number | string) {
+        if (typeof id_key === "number") {
+            for (const driver of value.value) {
+                if (driver.id === id_key) {
+                    return driver;
+                }
+            }
+        }
+        if (typeof id_key === "string") {
+            for (const driver of value.value) {
+                if (driver.key === id_key) {
+                    return driver;
+                }
             }
         }
         return null;

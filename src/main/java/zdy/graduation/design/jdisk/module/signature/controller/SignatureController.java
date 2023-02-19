@@ -34,6 +34,6 @@ public class SignatureController {
         if (sign == null) {
             return AjaxResp.error();
         }
-        return AjaxResp.success(sign);
+        return AjaxResp.success("OK", sign);
     }
 }

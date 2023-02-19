@@ -4,7 +4,7 @@ import { http } from "@/scripts/http";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useSystemConfigs } from "@/store/SystemConfigs";
 import { Message, Scrollbar as AScrollbar } from "@arco-design/web-vue";
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 
 const appConfigs = useAppConfigs(),
@@ -17,9 +17,11 @@ const props = defineProps({
     }
 });
 
-if (!props.selectedKey) {
-    router.push("/admin/normal");
-}
+watchEffect(() => {
+    if (!props.selectedKey) {
+        router.push("/admin/normal");
+    }
+});
 
 const avatarSrc = computed(() => {
     return systemConfigs.values.avatar;
@@ -64,7 +66,8 @@ const contentScrollbarStyle = reactive({
     height: computed(() => {
         const height = appConfigs.client.height - headerHeight.value;
         return height <= 0 ? "0" : `${height}px`;
-    })
+    }),
+    backgroundColor: "var(--color-secondary)"
 });
 
 const collapseMenu = reactive({
@@ -170,7 +173,7 @@ useBodyNoScrollbar();
             </Transition>
         </div>
         <ALayoutContent>
-            <AScrollbar :style="contentScrollbarStyle" style="background-color: var(--color-secondary)">
+            <AScrollbar :style="contentScrollbarStyle">
                 <RouterView />
             </AScrollbar>
         </ALayoutContent>

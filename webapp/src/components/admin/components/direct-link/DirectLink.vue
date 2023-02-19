@@ -14,7 +14,7 @@ const card_loading = ref(false);
 async function getDirectLinkList() {
     const resp = await http.directLink.list();
     if (resp.code === 0) {
-        _tableData.value = resp.data;
+        directLinkList.value = resp.data;
     }
 }
 
@@ -30,9 +30,9 @@ const fileName = ref("");
 const directKey = ref("");
 const rangeDate = ref();
 
-const _tableData = ref([]);
+const directLinkList = ref([]);
 
-watch(() => _tableData.value, data => {
+watch(() => directLinkList.value, data => {
     tableData.value = getTableDataByCondition(data);
 }, {
     deep: true
@@ -40,7 +40,9 @@ watch(() => _tableData.value, data => {
 
 function getTableDataByCondition(source) {
     const result = [];
-    for (const data of source) {
+    for (let i = 0; i < source.length; i++) {
+        const data = source[i];
+
         const driver = driverList.getDriver(data.driverId);
         if (!driver.enable) continue;
 
@@ -57,6 +59,7 @@ function getTableDataByCondition(source) {
             if (createDate < date0 || createDate > date1) continue;
         }
         result.push({
+            index: i,
             driverName: driver.name,
             directKey: data.key,
             path: data.path,
@@ -114,7 +117,7 @@ function on_table_select(rowKeys) {
 function on_table_select_all(checked) {
     if (checked) {
         for (const data of tableData.value) {
-            tableRowSelection.selectedRowKeys.push(data.directKey);
+            tableRowSelection.selectedRowKeys.push(data.index);
         }
     } else {
         tableRowSelection.selectedRowKeys = [];
@@ -126,18 +129,7 @@ window.generate = http.directLink.generate;
 const tableLoading = ref(false);
 
 function on_search_button_click() {
-    tableData.value = getTableDataByCondition(_tableData.value);
-}
-
-function getTableRowDataByKey(key) {
-    let index = 0;
-    for (const data of _tableData.value) {
-        if (key === data.key) {
-            return { index, data };
-        }
-        index++;
-    }
-    return { index, data: null }
+    tableData.value = getTableDataByCondition(directLinkList.value);
 }
 
 function on_batch_delete_button_click() {
@@ -151,8 +143,8 @@ function on_batch_delete_button_click() {
         hideCancel: false,
         onOk: async () => {
             tableLoading.value = true;
-            for (const key of deletedKeys) {
-                await http.directLink.remove(key);
+            for (const index of deletedKeys) {
+                await http.directLink.remove(directLinkList.value[index].key);
             }
             await getDirectLinkList();
             tableLoading.value = false;
@@ -172,8 +164,7 @@ function on_delete_button_click(record) {
             tableLoading.value = true;
             const resp = await http.directLink.remove(directKey);
             if (resp.code === 0) {
-                const { index } = getTableRowDataByKey(directKey);
-                _tableData.value.splice(index, 1);
+                directLinkList.value.splice(record.index, 1);
             }
             tableLoading.value = false;
         }
@@ -248,7 +239,7 @@ function on_delete_button_click(record) {
                                 批量删除
                             </AButton>
                         </div>
-                        <ATable :columns="tableColumns" :data="tableData" row-key="directKey" :scroll="tableScroll"
+                        <ATable :columns="tableColumns" :data="tableData" row-key="index" :scroll="tableScroll"
                             :pagination="false" :row-selection="tableRowSelection" @select="on_table_select"
                             @select-all="on_table_select_all" :loading="tableLoading">
                             <template #operate="{ record }">

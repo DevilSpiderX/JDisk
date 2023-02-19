@@ -53,7 +53,7 @@ export interface Http {
         }
     },
     file: {
-        list: () => Promise<Resp>,
+        list: (driverKey: string, dir: string) => Promise<Resp>,
         operate: {
             update: (path: string, newName: string, newParent: string, driverKey: string) => Promise<Resp>,
             remove: (path: string, driverKey: string) => Promise<Resp>,

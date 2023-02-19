@@ -14,16 +14,15 @@ const routes: RouteRecordRaw[] = [
                 driverKey = route.params.driverKey;
             }
 
-            let path;
+            let paths;
             if (route.params.path instanceof Array) {
-                path = route.params.path;
+                paths = route.params.path;
             } else {
-                path = undefined;
+                paths = undefined;
             }
 
-
             return {
-                driverKey, path
+                driverKey, paths
             }
         }
     },
