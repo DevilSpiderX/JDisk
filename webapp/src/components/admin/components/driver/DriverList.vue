@@ -2,7 +2,7 @@
 import { http } from "@/scripts/http";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useDriverList } from "@/store/DriverList";
-import { Message } from "@arco-design/web-vue";
+import { Message, Modal } from "@arco-design/web-vue";
 import { computed, onMounted, reactive, ref } from 'vue';
 
 const appConfigs = useAppConfigs(), driverList = useDriverList();
@@ -19,17 +19,8 @@ onMounted(async () => {
 
 const spin_loading = reactive({});
 
-function getDriver(id) {
-    for (const d of driverList.value) {
-        if (d.id === id) {
-            return d;
-        }
-    }
-    return null;
-}
-
 async function scanDriver(id) {
-    const driver = getDriver(id);
+    const driver = driverList.getDriver(id);
 
     if (driver === null) {
         Message.error("驱动器不存在");
@@ -46,8 +37,23 @@ async function scanDriver(id) {
     spin_loading[driver.key] = false;
 }
 
-async function deleteDriver(id) {
-
+function deleteDriver(id) {
+    Modal.warning({
+        title: "警告",
+        titleAlign: "center",
+        width: "auto",
+        content: "确认删除？",
+        hideCancel: false,
+        onOk: async () => {
+            const resp = await http.driver.operate.remove(id)
+            if (resp.code === 0) {
+                Message.success("删除成功");
+                location.reload();
+            } else {
+                Message.error("删除失败");
+            }
+        }
+    });
 }
 
 </script>
@@ -68,7 +74,12 @@ async function deleteDriver(id) {
                                             <div class="image-wrapper">
                                                 <img src="@/assets/driver.svg" width="80" height="80" />
                                             </div>
-                                            <h3 class="driver-name">{{ driver.name }}</h3>
+                                            <template v-if="!driver.remark || driver.remark === ''">
+                                                <h3 class="driver-name">{{ driver.name }}</h3>
+                                            </template>
+                                            <ATooltip v-else :content="driver.remark">
+                                                <h3 class="driver-name">{{ driver.name }}</h3>
+                                            </ATooltip>
                                             <div class="tag-wrapper">
                                                 <ATag v-if="driver.enable" color="green" size="large">启用</ATag>
                                                 <ATag v-else color="red" size="large">停用</ATag>

@@ -26,8 +26,18 @@ export const useDriverList = defineStore("driverList", () => {
 
     updateList();
 
+    function getDriver(id: number) {
+        for (const driver of value.value) {
+            if (driver.id === id) {
+                return driver;
+            }
+        }
+        return null;
+    }
+
     return {
         value,
-        updateList
+        updateList,
+        getDriver
     }
 });

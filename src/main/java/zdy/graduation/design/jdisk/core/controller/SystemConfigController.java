@@ -30,7 +30,7 @@ public class SystemConfigController {
         Pattern numberPattern = Pattern.compile("\\d+");
         Pattern booleanPattern = Pattern.compile("true|false");
         list.forEach(config -> {
-            if (config.getKey().equals("username") || config.getKey().equals("password")) return;
+            if (config.getKey().equals("password")) return;
             String value = config.getValue();
             if (value == null) return;
 

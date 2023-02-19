@@ -4,6 +4,7 @@ import { ref } from 'vue';
 interface ValuesType {
     installed?: boolean,
     siteName?: string,
+    username?: string,
     domain?: string,
     avatar?: string,
     customVideoSuffix?: string,
@@ -16,19 +17,7 @@ interface ValuesType {
 }
 
 export const useSystemConfigs = defineStore("systemConfigs", () => {
-    const values = ref<ValuesType>({
-        installed: undefined,
-        siteName: undefined,
-        domain: undefined,
-        avatar: undefined,
-        customVideoSuffix: undefined,
-        customImageSuffix: undefined,
-        customAudioSuffix: undefined,
-        customTextSuffix: undefined,
-        rootShowStorage: undefined,
-        maxFileUploads: undefined,
-        showLogin: undefined
-    });
+    const values = ref<ValuesType>({});
 
     return {
         values

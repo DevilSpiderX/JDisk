@@ -131,11 +131,16 @@ public class DriverService {
         FileTree root = FileTree.scanDriver(driver);
         int n = suid.delete(new VirtualFile(), new ConditionImpl().op("driver_id", Op.equal, driver.getId()));
         Thread scanThread = new Thread(() -> {
-            if (n >= 0) {
-                int count = addTreeToSQL(root);
-                logger.info("驱动器{}扫描结束，共记录{}个文件", id, count);
+            try {
+                if (n >= 0) {
+                    int count = addTreeToSQL(root);
+                    logger.info("驱动器{}扫描结束，共记录{}个文件", id, count);
+                }
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            } finally {
+                scanning.put(id, false);
             }
-            scanning.put(id, false);
         });
         scanThread.setDaemon(false);
         scanThread.start();
@@ -155,6 +160,6 @@ public class DriverService {
         if (n < 0) {
             logger.warn("驱动器({})扫描目录{}出现问题", node.getDriver().getName(), node.getFile().getPath());
         }
-        return count + n > 0 ? n : 0;
+        return count + Math.max(n, 0);
     }
 }

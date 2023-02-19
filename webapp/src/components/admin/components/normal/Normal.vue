@@ -21,6 +21,14 @@ const form = reactive({
 });
 
 async function form_submit() {
+    if (form.siteName === "" || form.domain === "") {
+        Message.error("必填项不能为空");
+        return;
+    }
+    if (domainInputErrorStatus.value) {
+        Message.error("格式错误");
+        return;
+    }
     card_loading.value = true;
     const flags = [];
     for (const key in form) {
@@ -76,7 +84,7 @@ function checkDomain(domain) {
                                     </template>
                                 </AInput>
                                 <template #extra>
-                                    此地址用于生成直链及本次存储下载使用，请务必保持和服务端地址一样 (需写 http(s):// 协议头)
+                                    此地址用于生成直链及本次存储下载使用，请务必保持和服务端地址一样 (需写 http(s):// 协议头).
                                 </template>
                             </AFormItem>
                             <AFormItem field="avatar" label="头像地址" :wrapper-col-props="{ xs: 24, md: 17 }">
@@ -86,7 +94,7 @@ function checkDomain(domain) {
                                     </template>
                                 </AInput>
                                 <template #extra>
-                                    用于管理员页面右上角头像地址，推荐尺寸为 40 * 40
+                                    用于管理员页面右上角头像地址，推荐尺寸为 40 * 40 .
                                 </template>
                             </AFormItem>
                             <AFormItem field="maxFileUploads" label="最大同时上传文件数">

@@ -60,7 +60,7 @@ async function form_submit() {
                             <AFormItem field="showLogin" label="是否显示登录入口">
                                 <ASwitch v-model="form.showLogin" />
                                 <template #extra>
-                                    启用后，会在门户显示后台登录入口，请根据自身情况选择是否启用
+                                    启用后，会在门户显示后台登录入口，请根据自身情况选择是否启用.
                                 </template>
                             </AFormItem>
                             <AFormItem field="rootShowStorage" label="根目录显示所有存储源">
@@ -79,7 +79,7 @@ async function form_submit() {
                                 <template #extra>
                                     自定义识别为视频格式的文件后缀，多个用逗号分开，如 'mp4,avi,mkv',
                                     在此列表中的将调用播放器打开（能否播放要取决于浏览器是否支持，
-                                    现代浏览器一般只支持封装格式为 h.264 (mp4) 的编码格式）
+                                    现代浏览器一般只支持封装格式为 h.264 (mp4) 的编码格式）.
                                 </template>
                             </AFormItem>
                             <AFormItem field="customImageSuffix" label="图像文件后缀" :wrapper-col-props="{ xs: 24, md: 17 }">
