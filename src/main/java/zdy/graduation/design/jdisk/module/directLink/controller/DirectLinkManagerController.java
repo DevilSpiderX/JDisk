@@ -52,7 +52,7 @@ public class DirectLinkManagerController {
                 directLink = directLinkService.generateDirectLink(path, driverId);
             }
             String shortLink = "%s/s/%s".formatted(domain, directLink.getKey());
-            String pathLink = "%s/direct/link/%s/%s".formatted(domain, driver.getKey(), directLink.getPath());
+            String pathLink = "%s/direct/link/%s%s".formatted(domain, driver.getKey(), directLink.getPath());
             result.add(Map.of(
                     "shortLink", shortLink,
                     "pathLink", pathLink

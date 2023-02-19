@@ -95,7 +95,7 @@ public class AjaxResp<T> implements Serializable {
 
     //返回失败
     public static AjaxResp<Void> failure() {
-        return new AjaxResp<>(CODE_FAILURE, "OK");
+        return new AjaxResp<>(CODE_FAILURE, "Failure");
     }
 
 

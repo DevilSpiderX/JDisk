@@ -3,12 +3,12 @@ import { http } from "@/scripts/http";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useSystemConfigs } from "@/store/SystemConfigs";
 import { Message } from "@arco-design/web-vue";
-import { computed, reactive, ref } from 'vue';
 import Hex from "crypto-js/enc-hex";
 import SHA256 from "crypto-js/sha256";
-import router from "@/router/router";
+import { computed, reactive, ref } from 'vue';
+import { useRouter } from "vue-router";
 
-const appConfigs = useAppConfigs(), systemConfigs = useSystemConfigs();
+const appConfigs = useAppConfigs(), systemConfigs = useSystemConfigs(), router = useRouter();
 
 const padding = computed(() => appConfigs.client.width < 768 ? "0" : "30px 0");
 

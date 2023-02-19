@@ -1,12 +1,12 @@
 <script setup>
-import router from "@/router/router";
 import { http } from "@/scripts/http";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useDriverList } from "@/store/DriverList";
 import { Message, Modal } from "@arco-design/web-vue";
-import { computed, reactive, ref, onMounted } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { useRouter } from "vue-router";
 
-const appConfigs = useAppConfigs(), driverList = useDriverList();
+const appConfigs = useAppConfigs(), driverList = useDriverList(), router = useRouter();
 
 const props = defineProps({
     id: {
