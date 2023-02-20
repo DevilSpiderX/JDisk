@@ -48,7 +48,7 @@ function deleteDriver(id) {
             const resp = await http.driver.operate.remove(id)
             if (resp.code === 0) {
                 Message.success("删除成功");
-                location.reload();
+                driverList.updateList();
             } else {
                 Message.error("删除失败");
             }

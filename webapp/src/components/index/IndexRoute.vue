@@ -5,9 +5,9 @@ import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useDriverList, ValueType as DriverType } from "@/store/DriverList";
 import { useSystemConfigs } from "@/store/SystemConfigs";
 import { constructPath, getSuffix } from "@/util/paths";
-import { LayoutHeader, Message, Modal, TableData, RequestOption, FileItem, CustomIcon } from "@arco-design/web-vue";
 import { getSvgByTypeAndSuffix } from "@/util/svg-util";
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, VNodeRef, watchEffect } from "vue";
+import { CustomIcon, FileItem, LayoutHeader, Message, Modal, RequestOption, TableData } from "@arco-design/web-vue";
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import MyTd from "./components/MyTd.vue";
 import MyTr from "./components/MyTr.vue";
@@ -47,6 +47,14 @@ watchEffect(async () => {
         }
     } else {
         driverSelect.value = undefined;
+        if (!systemConfigs.values.rootShowStorage) {
+            for (const driver of driverList.value) {
+                if (driver.enable) {
+                    router.push("/" + driver.key);
+                    break;
+                }
+            }
+        }
     }
 })
 
@@ -88,16 +96,20 @@ interface MyFile {
 }
 
 const fileList = ref<Array<MyFile>>([]);
-watchEffect(async () => {
-    if (props.driverKey && directoryPath.value) {
-        tableLoading.value = true;
-        const resp = await http.file.list(props.driverKey, directoryPath.value);
-        if (resp.code === 0) {
-            fileList.value = resp.data;
-        }
-        tableLoading.value = false;
+watchEffect(() => {
+    if (props.driverKey) {
+        updateFileList(props.driverKey, directoryPath.value);
     }
 });
+
+async function updateFileList(driverKey: string, directoryPath: string) {
+    tableLoading.value = true;
+    const resp = await http.file.list(driverKey, directoryPath);
+    if (resp.code === 0) {
+        fileList.value = resp.data;
+    }
+    tableLoading.value = false;
+}
 
 const breadcrumbRoutes = computed<Array<{ path: string, label: string }>>(() => {
     const result: Array<{ path: string, label: string }> = [];
@@ -181,13 +193,13 @@ const tableData = computed<Array<MyTableData>>(() => {
             let suffixType: "video" | "image" | "audio" | "text" | "normal" | undefined = undefined;
             if (file.type === "F") {
                 const suffix = getSuffix(file.name);
-                if (systemConfigs.values.customVideoSuffix?.indexOf(suffix) !== -1) {
+                if (systemConfigs.values.customVideoSuffix.indexOf(suffix) !== -1) {
                     suffixType = "video"
-                } else if (systemConfigs.values.customImageSuffix?.indexOf(suffix) !== -1) {
+                } else if (systemConfigs.values.customImageSuffix.indexOf(suffix) !== -1) {
                     suffixType = "image"
-                } else if (systemConfigs.values.customAudioSuffix?.indexOf(suffix) !== -1) {
+                } else if (systemConfigs.values.customAudioSuffix.indexOf(suffix) !== -1) {
                     suffixType = "audio"
-                } else if (systemConfigs.values.customTextSuffix?.indexOf(suffix) !== -1) {
+                } else if (systemConfigs.values.customTextSuffix.indexOf(suffix) !== -1) {
                     suffixType = "text"
                 } else {
                     suffixType = "normal"
@@ -373,7 +385,7 @@ function table_cell_contextmenu(record: MyTableData, rowIndex: number, event: Po
                 if (props.driverKey) {
                     const resp = await http.file.operate.remove(file.path, props.driverKey);
                     if (resp.code === 0) {
-                        location.reload();
+                        await updateFileList(props.driverKey, directoryPath.value);
                     }
                 }
                 tableLoading.value = false;
@@ -419,8 +431,7 @@ async function on_mkdirModal_ok() {
         const resp = await http.file.operate.mkdir(name, directoryPath.value, props.driverKey);
         if (resp.code === 0) {
             Message.success("新建文件夹成功");
-            await nextTick();
-            location.reload();
+            await updateFileList(props.driverKey, directoryPath.value);
         }
     }
 }
@@ -459,13 +470,11 @@ async function on_renamerModal_ok() {
         );
         if (resp.code === 0) {
             Message.success("重命名成功");
-            await nextTick();
-            location.reload();
-            return;
+            await updateFileList(props.driverKey, directoryPath.value);
         }
     }
     Message.success("重命名失败");
-    tableLoading.value = true;
+    tableLoading.value = false;
 }
 
 const uploadMoadl = reactive<{
@@ -484,13 +493,13 @@ const uploadMoadl = reactive<{
             let suffixType: "video" | "image" | "audio" | "text" | "normal" | undefined = undefined;
             if (fileItem.name) {
                 const suffix = getSuffix(fileItem.name);
-                if (systemConfigs.values.customVideoSuffix?.indexOf(suffix) !== -1) {
+                if (systemConfigs.values.customVideoSuffix.indexOf(suffix) !== -1) {
                     suffixType = "video"
-                } else if (systemConfigs.values.customImageSuffix?.indexOf(suffix) !== -1) {
+                } else if (systemConfigs.values.customImageSuffix.indexOf(suffix) !== -1) {
                     suffixType = "image"
-                } else if (systemConfigs.values.customAudioSuffix?.indexOf(suffix) !== -1) {
+                } else if (systemConfigs.values.customAudioSuffix.indexOf(suffix) !== -1) {
                     suffixType = "audio"
-                } else if (systemConfigs.values.customTextSuffix?.indexOf(suffix) !== -1) {
+                } else if (systemConfigs.values.customTextSuffix.indexOf(suffix) !== -1) {
                     suffixType = "text"
                 } else {
                     suffixType = "normal"
@@ -536,27 +545,31 @@ function uploadModalCustomRequest(option: RequestOption) {
 }
 
 const uploadingList = ref<Array<FileItem>>([]);
-const uploadModelRef = ref();
+const waitingList = ref<Array<FileItem>>([]);
+const uploadRef = ref();
 
-watchEffect(() => {
-    const maxFileUploads = systemConfigs.values.maxFileUploads;
-    if (maxFileUploads && uploadModelRef.value) {
-        if (uploadMoadl.fileList.length !== 0 && uploadingList.value.length < maxFileUploads) {
-            for (const item of uploadMoadl.fileList) {
-                if (item.status === "init") {
-                    uploadModelRef.value.submit(item);
-                    uploadingList.value.push(item);
-                }
-                if (uploadingList.value.length >= maxFileUploads) break;
-            }
-        }
-    }
-});
+function uploadFileItem(item: FileItem) {
+    uploadRef.value.submit(item);
+    uploadingList.value.push(item);
+}
 
 function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
+    const maxFileUploads = systemConfigs.values.maxFileUploads;
+    if (item.status === "init") {
+        if (uploadingList.value.length < maxFileUploads) {
+            uploadFileItem(item);
+        } else {
+            waitingList.value.push(item);
+        }
+    }
     if (item.status === "done" || item.status === "error") {
         const index = uploadingList.value.indexOf(item);
         uploadingList.value.splice(index, 1);
+
+        const wItem = waitingList.value.shift()
+        if (wItem) {
+            uploadFileItem(wItem);
+        }
     }
 }
 
@@ -611,12 +624,6 @@ function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
                                     </template>
                                     上传文件
                                 </ADoption>
-                                <ADoption :disabled="!driver?.enableFileOperator">
-                                    <template #icon>
-                                        <i class="fa-solid fa-folder-arrow-up"></i>
-                                    </template>
-                                    上传文件夹
-                                </ADoption>
                             </template>
                         </ADropdown>
                         <AButton @click="drawer.visible = true">
@@ -657,12 +664,6 @@ function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
                                         <i class="fa-solid fa-file-arrow-up"></i>
                                     </template>
                                     上传文件
-                                </ADoption>
-                                <ADoption :disabled="!driver?.enableFileOperator">
-                                    <template #icon>
-                                        <i class="fa-solid fa-folder-arrow-up"></i>
-                                    </template>
-                                    上传文件夹
                                 </ADoption>
                             </template>
                             <ADoption @click="drawer.visible = true">
@@ -783,7 +784,7 @@ function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
 
     <AModal title="上传文件" v-model:visible="uploadMoadl.visible" width="90%" :footer="false" draggable
         @close="uploadMoadl.onClose">
-        <AUpload v-model:file-list="uploadMoadl.fileList" ref="uploadModelRef" draggable multiple
+        <AUpload v-model:file-list="uploadMoadl.fileList" ref="uploadRef" multiple draggable
             :custom-request="uploadModalCustomRequest" :auto-upload="false" :custom-icon="uploadMoadl.customIcon"
             @change="on_fileItme_status_change" />
     </AModal>

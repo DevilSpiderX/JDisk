@@ -1,23 +1,34 @@
 import { defineStore } from 'pinia';
-import { ref,watch } from 'vue';
+import { ref, watch } from 'vue';
 
 interface ValuesType {
     installed?: boolean,
-    siteName?: string,
-    username?: string,
-    domain?: string,
+    siteName: string,
+    username: string,
+    domain: string,
     avatar?: string,
-    customVideoSuffix?: string,
-    customImageSuffix?: string,
-    customAudioSuffix?: string,
-    customTextSuffix?: string,
-    rootShowStorage?: boolean,
-    maxFileUploads?: number,
-    showLogin?: boolean
+    customVideoSuffix: string,
+    customImageSuffix: string,
+    customAudioSuffix: string,
+    customTextSuffix: string,
+    rootShowStorage: boolean,
+    maxFileUploads: number,
+    showLogin: boolean
 }
 
 export const useSystemConfigs = defineStore("systemConfigs", () => {
-    const values = ref<ValuesType>({});
+    const values = ref<ValuesType>({
+        siteName: "",
+        username: "",
+        domain: "",
+        customVideoSuffix: "",
+        customImageSuffix: "",
+        customAudioSuffix: "",
+        customTextSuffix: "",
+        rootShowStorage: true,
+        maxFileUploads: 3,
+        showLogin: true
+    });
 
     return {
         values

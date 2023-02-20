@@ -11,6 +11,8 @@ import zdy.graduation.design.jdisk.module.virtualFileSystem.exception.DriverPath
 import zdy.graduation.design.jdisk.module.virtualFileSystem.exception.DriverScanning;
 import zdy.graduation.design.jdisk.module.virtualFileSystem.service.DriverService;
 
+import java.util.Map;
+
 @Controller
 @RequestMapping("/api/driver/operate")
 public class DriverOpController {
@@ -31,7 +33,7 @@ public class DriverOpController {
     @ResponseBody
     public AjaxResp<?> add(@RequestBody AddRequest reqBody)
             throws DriverExistedException, DriverPathIsFileException {
-        boolean flag = driverService.addDriver(
+        int driverId = driverService.addDriver(
                 reqBody.name(),
                 reqBody.key(),
                 reqBody.path(),
@@ -40,7 +42,7 @@ public class DriverOpController {
                 reqBody.tokenTime(),
                 reqBody.enableFileOperator()
         );
-        return flag ? AjaxResp.success() : AjaxResp.failure();
+        return driverId != -1 ? AjaxResp.success(Map.of("driverId", driverId)) : AjaxResp.failure();
     }
 
     @PostMapping("/remove")

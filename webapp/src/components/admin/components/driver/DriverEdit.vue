@@ -69,6 +69,9 @@ async function form_submit() {
             driver.enableFileOperator
         );
         flag = resp.code === 0
+        if (flag) {
+            http.driver.operate.scan(resp.data.driverId);
+        }
     } else {
         const resp = await http.driver.operate.update(
             driver.id,

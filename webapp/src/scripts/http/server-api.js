@@ -100,7 +100,7 @@ const http = {
     },
     file: {
         async list(driverKey, dir) {
-            const resp = await httpInstance.get(`/api/file/list/${driverKey}${dir}`);
+            const resp = await httpInstance.get(`/api/file/list/${driverKey}${dir === "/" ? "" : dir}`);
             return resp.data;
         },
         operate: {

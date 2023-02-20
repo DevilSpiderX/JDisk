@@ -43,13 +43,13 @@ public class DriverService {
         }
     }
 
-    public boolean addDriver(String name,
-                             String key,
-                             String path,
-                             String remark,
-                             boolean isPrivate,
-                             int tokenTime,
-                             boolean enableFileOperator)
+    public int addDriver(String name,
+                         String key,
+                         String path,
+                         String remark,
+                         boolean isPrivate,
+                         int tokenTime,
+                         boolean enableFileOperator)
             throws DriverExistedException, DriverPathIsFileException {
         VirtualDriver driver = new VirtualDriver();
         driver.setKey(key);
@@ -66,7 +66,14 @@ public class DriverService {
         driver.setEnableFileOperator(enableFileOperator);
         int n = suid.insert(driver, IncludeType.INCLUDE_EMPTY);
         logger.info("创建驱动器{}", n > 0 ? "成功" : "失败");
-        return n > 0;
+        int driverId = -1;
+        if (n > 0) {
+            VirtualDriver newEntity = suid.selectOne(driver);
+            if (newEntity != null) {
+                driverId = newEntity.getId();
+            }
+        }
+        return driverId;
     }
 
     public boolean removeDriver(int id) {
