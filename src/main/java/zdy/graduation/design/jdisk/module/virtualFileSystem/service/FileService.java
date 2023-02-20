@@ -46,13 +46,21 @@ public class FileService {
         VirtualFile virtualFile = new VirtualFile();
         virtualFile.setPath(VirtualPath.get(parent, fileName));
         virtualFile.setDriverId(driver.getId());
+
+        var oldEntity = suid.selectOne(virtualFile);
+
         virtualFile.setName(fileName);
         virtualFile.setType("F");
         virtualFile.setParent(parent);
         virtualFile.setModified(new Date(file.lastModified()));
         virtualFile.setSize(file.length());
 
-        int n = suid.insert(virtualFile);
+        int n;
+        if (oldEntity == null) {
+            n = suid.insert(virtualFile);
+        } else {
+            n = suid.update(oldEntity, virtualFile);
+        }
         logger.info("驱动器({})添加文件{}{}", driver.getName(), virtualFile.getPath(), n > 0 ? "成功" : "失败");
         return n > 0;
     }

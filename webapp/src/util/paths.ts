@@ -2,16 +2,16 @@
 export function constructPath(paths?: Array<string>) {
     if (paths) {
         let path = "";
-        let parentPath;
+        let lastDirectoryPath;
         for (const p of paths) {
             if (p === "") continue;
-            parentPath = path;
+            lastDirectoryPath = path;
             path += `/${p}`
         }
-        if (!parentPath) parentPath = "/";
-        return { path, parentPath };
+        if (!lastDirectoryPath) lastDirectoryPath = "/";
+        return { path, lastDirectoryPath };
     } else {
-        return { path: "/", parentPath: undefined };
+        return { path: "/", lastDirectoryPath: undefined };
     }
 }
 

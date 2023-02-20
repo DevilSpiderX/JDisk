@@ -32,7 +32,8 @@ public class DirectLinkController {
 
         VirtualDriver driver = driverService.getDriver(directLink.getDriverId());
 
-        return "redirect:/direct/link/%s/%s".formatted(driver.getKey(), directLink.getPath());
+        return "redirect:/direct/link/%s%s".formatted(directLinkService.URLEncode(driver.getKey()),
+                directLinkService.encodePath(directLink.getPath()));
     }
 
     @RequestMapping("/direct/link/{driverKey}/{*path}")
@@ -44,7 +45,7 @@ public class DirectLinkController {
 
         DirectLink directLink = directLinkService.findLinkByPathAndDriverId(path, driver.getId());
         if (directLink == null) {
-            return ResponseEntity.ok(AjaxResp.error("%s/%s未生成直链，无法下载".formatted(driver.getKey(), path)));
+            return ResponseEntity.ok(AjaxResp.error("%s%s未生成直链，无法下载".formatted(driver.getKey(), path)));
         }
 
         org.springframework.core.io.Resource resource = fileService.getFileResource(path, driver);

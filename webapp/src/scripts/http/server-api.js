@@ -127,7 +127,7 @@ const http = {
                 data.append("file", file, fileName);
                 data.append("fileName", fileName);
                 const resp = await httpInstance.post(
-                    `/api/file/operate/upload/${driverKey}/${parent}`,
+                    `/api/file/operate/upload/${driverKey}${parent}`,
                     data,
                     {
                         timeout: 0,

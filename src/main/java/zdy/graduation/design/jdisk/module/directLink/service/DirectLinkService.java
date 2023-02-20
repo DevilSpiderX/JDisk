@@ -8,6 +8,8 @@ import org.teasoft.bee.osql.SuidRich;
 import org.teasoft.honey.osql.core.BeeFactoryHelper;
 import zdy.graduation.design.jdisk.module.directLink.entity.DirectLink;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -63,5 +65,19 @@ public class DirectLinkService {
 
     public List<DirectLink> list() {
         return suid.select(new DirectLink());
+    }
+
+
+    public String URLEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    public String encodePath(String path) {
+        StringBuilder pathBuilder = new StringBuilder();
+        for (String s : path.split("/")) {
+            if (s.equals("")) continue;
+            pathBuilder.append("/").append(URLEncode(s));
+        }
+        return pathBuilder.toString();
     }
 }
