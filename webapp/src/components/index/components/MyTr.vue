@@ -16,5 +16,3 @@ function on_tr_contextmenu(event) {
         <slot />
     </tr>
 </template>
-
-<style scoped></style>

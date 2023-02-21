@@ -4,12 +4,12 @@ import { http } from "@/scripts/http";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useDriverList, ValueType as DriverType } from "@/store/DriverList";
 import { useSystemConfigs } from "@/store/SystemConfigs";
+import { formatBytes } from "@/util/format-util";
 import { constructPath, getSuffix } from "@/util/paths";
 import { getSvgByTypeAndSuffix } from "@/util/svg-util";
-import { CustomIcon, FileItem, LayoutHeader, Message, Modal, RequestOption, TableData } from "@arco-design/web-vue";
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watchEffect } from "vue";
+import { CustomIcon, FileItem, LayoutHeader, Message, Modal, RequestOption, TableColumnData, TableData, TableRowSelection } from "@arco-design/web-vue";
+import { computed, onMounted, onUnmounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
-import MyTd from "./components/MyTd.vue";
 import MyTr from "./components/MyTr.vue";
 import { useTableBodyScrollWrap } from "./hooks/table-body-scroll-wrap";
 import { useTableMenu } from "./hooks/table-menu";
@@ -159,8 +159,8 @@ const driverSelect = ref();
 interface MyTableData extends TableData {
     index: number,
     name: string,
-    modified?: string,
-    size?: number,
+    modified: string,
+    size: string,
     type: "F" | "D" | "driver" | "back",
     suffixType?: "video" | "image" | "audio" | "text" | "normal"
 }
@@ -168,25 +168,22 @@ interface MyTableData extends TableData {
 const tableData = computed<Array<MyTableData>>(() => {
     const list: Array<MyTableData> = [];
     if (props.driverKey) {
+        let name = "首页";
         if (props.paths) {
-            let name = "";
             if (lastDirectoryPath.value === "/") {
                 name = driver.value ? driver.value.name : "/";
             } else {
-                name = props.paths[props.paths?.length - 2];
+                name = props.paths[props.paths.length - 2];
             }
-            list.push({
-                index: -1,
-                name,
-                type: "back"
-            });
-        } else {
-            list.push({
-                index: -1,
-                name: "首页",
-                type: "back"
-            });
         }
+        list.push({
+            index: -1,
+            name,
+            modified: "-",
+            size: "-",
+            type: "back",
+            disabled: true
+        });
         for (let index = 0; index < fileList.value.length; index++) {
             const file = fileList.value[index];
 
@@ -206,11 +203,13 @@ const tableData = computed<Array<MyTableData>>(() => {
                 }
             }
 
+            const size = file.size ? formatBytes(file.size, 2, " ") : "-";
+
             list.push({
                 index,
                 name: file.name,
                 modified: file.modified,
-                size: file.size,
+                size,
                 type: file.type,
                 suffixType
             });
@@ -227,7 +226,10 @@ const tableData = computed<Array<MyTableData>>(() => {
                 list.push({
                     index,
                     name: driver.name,
-                    type: "driver"
+                    modified: "-",
+                    size: "-",
+                    type: "driver",
+                    disabled: true
                 });
             }
         }
@@ -252,13 +254,13 @@ function getNumByType(a: MyTableData) {
 const tableColumns = computed(() => {
     if (appConfigs.client.width >= 600) {
         return [
-            { title: "文件名", dataIndex: "name" },
+            { title: "文件名", dataIndex: "name", slotName: "fileName" },
             { title: "修改时间", dataIndex: "modified" },
             { title: "大小", dataIndex: "size" }
         ];
     } else {
         return [
-            { title: "文件名", dataIndex: "name" },
+            { title: "文件名", dataIndex: "name", slotName: "fileName" },
             { title: "大小", dataIndex: "size" }
         ]
     }
@@ -320,6 +322,34 @@ async function download(file: MyFile) {
     Message.error("下载失败");
 }
 
+const tableRowSelection = reactive<TableRowSelection>({
+    type: "checkbox",
+    selectedRowKeys: [],
+    showCheckedAll: true
+});
+
+watch(() => ({
+    driverKey: props.driverKey,
+    paths: props.paths
+}), () => {
+    tableRowSelection.selectedRowKeys = [];
+});
+
+function on_table_select(rowKeys: (string | number)[]) {
+    tableMenu.visible = false;
+    tableRowSelection.selectedRowKeys = rowKeys;
+}
+
+function on_table_select_all(checked: boolean) {
+    if (checked) {
+        for (let index = 0; index < fileList.value.length; index++) {
+            tableRowSelection.selectedRowKeys?.push(index);
+        }
+    } else {
+        tableRowSelection.selectedRowKeys = [];
+    }
+}
+
 const drawer = reactive({
     visible: false,
     empty_form: {}
@@ -328,69 +358,156 @@ const drawer = reactive({
 const { tableMenu } = useTableMenu();
 const { tableBodyScrollWrap } = useTableBodyScrollWrap(".file-table");
 
-function table_cell_contextmenu(record: MyTableData, rowIndex: number, event: PointerEvent) {
-    tableMenu.menus[0].hidden = record.type !== "D";
-    tableMenu.menus[1].hidden = record.type !== "F";
-    tableMenu.menus[2].hidden = record.type !== "F";
-    tableMenu.menus[3].hidden = !adminStatus.value;
-    tableMenu.menus[4].hidden = !adminStatus.value;
-    tableMenu.menus[5].hidden = !adminStatus.value;
+function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: PointerEvent) {
+    //0打开 1下载  2生成直链  3分隔符  4重命名  5删除
+    function setMenus3HiddenValue() {
+        tableMenu.menus[3].hidden = (tableMenu.menus[4].hidden && tableMenu.menus[5].hidden) ||
+            (tableMenu.menus[0].hidden && tableMenu.menus[1].hidden && tableMenu.menus[2].hidden);
+    }
+
     if (driver.value) {
         tableMenu.menus[4].disabled = !driver.value.enableFileOperator;
         tableMenu.menus[5].disabled = !driver.value.enableFileOperator;
     }
 
-    const file = fileList.value[record.index];
+    const selectedRowKeys = tableRowSelection.selectedRowKeys;
 
-    if (record.type === "D") {
-        tableMenu.onClicks.open = () => {
-            if (props.driverKey) {
-                router.push(`/${props.driverKey}${file.path}`);
-            }
-        }
-    }
-
-    if (record.type === "F") {
-        tableMenu.onClicks.download = () => {
-            download(file);
-        }
-
-        tableMenu.onClicks.generateLink = async () => {
-            if (props.driverKey) {
-                const resp = await http.directLink.generate([file.path], props.driverKey);
-                if (resp.code === 0) {
-                    directLinkModal.form.short = resp.data[0].shortLink;
-                    directLinkModal.form.long = resp.data[0].pathLink;
-                    directLinkModal.visible = true;
+    if (selectedRowKeys && selectedRowKeys.length !== 0) {
+        //有勾选项时
+        tableMenu.menus[0].hidden = true;
+        tableMenu.menus[1].hidden = true;
+        tableMenu.menus[2].hidden = false;
+        for (const index of selectedRowKeys) {
+            if (typeof index === "number") {
+                const file = fileList.value[index];
+                if (file.type === "D") {
+                    tableMenu.menus[2].hidden = true;
+                    break;
                 }
             }
         }
-    }
+        tableMenu.menus[4].hidden = true;
+        tableMenu.menus[5].hidden = !adminStatus.value;
+        setMenus3HiddenValue();
 
-    tableMenu.onClicks.rename = () => {
-        renameModal.visible = true;
-        renameModal.form.name = file.name;
-        renameModal.form.file = file;
-    }
+        tableMenu.menus[5].label = `删除(${tableRowSelection.selectedRowKeys?.length})`;
 
-    tableMenu.onClicks.delete = () => {
-        Modal.warning({
-            title: "警告",
-            titleAlign: "center",
-            width: "auto",
-            content: `确认删除这个文件/目录？`,
-            hideCancel: false,
-            onOk: async () => {
-                tableLoading.value = true;
+        if (!tableMenu.menus[2].hidden) {
+            tableMenu.onClicks.generateLink = async () => {
                 if (props.driverKey) {
-                    const resp = await http.file.operate.remove(file.path, props.driverKey);
+                    const fileNames: Array<string> = [];
+                    const paths: Array<string> = [];
+                    for (let i = 0; i < selectedRowKeys.length; i++) {
+                        const index = selectedRowKeys[i];
+                        if (typeof index === "number") {
+                            const file = fileList.value[index];
+                            fileNames.push(file.name);
+                            paths.push(file.path);
+                        }
+                    }
+                    const resp = await http.directLink.generate(paths, props.driverKey);
                     if (resp.code === 0) {
-                        await updateFileList(props.driverKey, directoryPath.value);
+                        for (let i = 0; i < paths.length; i++) {
+                            directLinkModal.table.data.push({
+                                name: fileNames[i],
+                                short: resp.data[i].shortLink,
+                                long: resp.data[i].pathLink
+                            });
+                        }
+                        directLinkModal.visible = true;
                     }
                 }
-                tableLoading.value = false;
             }
-        });
+        }
+
+        tableMenu.onClicks.delete = () => {
+            Modal.warning({
+                title: "警告",
+                titleAlign: "center",
+                width: "auto",
+                content: `确认删除这${selectedRowKeys.length}个文件/目录？`,
+                hideCancel: false,
+                onOk: async () => {
+                    tableLoading.value = true;
+                    if (props.driverKey) {
+                        for (let i = 0; i < selectedRowKeys.length; i++) {
+                            const index = selectedRowKeys[i];
+                            if (typeof index === "number") {
+                                await http.file.operate.remove(fileList.value[index].path, props.driverKey);
+                            }
+                        }
+                        await updateFileList(props.driverKey, directoryPath.value);
+                    }
+                    tableLoading.value = false;
+                }
+            });
+        }
+
+    } else {
+        //没有勾选项时
+        tableMenu.menus[0].hidden = record.type !== "D";
+        tableMenu.menus[1].hidden = record.type !== "F";
+        tableMenu.menus[2].hidden = record.type !== "F";
+        tableMenu.menus[4].hidden = !adminStatus.value;
+        tableMenu.menus[5].hidden = !adminStatus.value;
+        setMenus3HiddenValue();
+
+        tableMenu.menus[5].label = "删除";
+
+        const file = fileList.value[record.index];
+
+        if (record.type === "D") {
+            tableMenu.onClicks.open = () => {
+                if (props.driverKey) {
+                    router.push(`/${props.driverKey}${file.path}`);
+                }
+            }
+        }
+
+        if (record.type === "F") {
+            tableMenu.onClicks.download = () => {
+                download(file);
+            }
+
+            tableMenu.onClicks.generateLink = async () => {
+                if (props.driverKey) {
+                    const resp = await http.directLink.generate([file.path], props.driverKey);
+                    if (resp.code === 0) {
+                        directLinkModal.table.data.push({
+                            name: file.name,
+                            short: resp.data[0].shortLink,
+                            long: resp.data[0].pathLink
+                        });
+                        directLinkModal.visible = true;
+                    }
+                }
+            }
+        }
+
+        tableMenu.onClicks.rename = () => {
+            renameModal.visible = true;
+            renameModal.form.name = file.name;
+            renameModal.form.file = file;
+        }
+
+        tableMenu.onClicks.delete = () => {
+            Modal.warning({
+                title: "警告",
+                titleAlign: "center",
+                width: "auto",
+                content: `确认删除这个${file.type === "F" ? "文件" : "目录"}( ${file.name} )？`,
+                hideCancel: false,
+                onOk: async () => {
+                    tableLoading.value = true;
+                    if (props.driverKey) {
+                        await http.file.operate.remove(file.path, props.driverKey);
+                        await updateFileList(props.driverKey, directoryPath.value);
+                    }
+                    tableLoading.value = false;
+                }
+            });
+        }
+
     }
 
     //滚动表格消除右键菜单
@@ -436,13 +553,33 @@ async function on_mkdirModal_ok() {
     }
 }
 
-const directLinkModal = reactive({
+const directLinkModal = reactive<{
+    visible: boolean,
+    table: {
+        columns: Array<TableColumnData>,
+        data: Array<TableData>
+    }
+}>({
     visible: false,
-    form: {
-        short: "",
-        long: ""
+    table: {
+        columns: [
+            { title: "文件名", dataIndex: "name", ellipsis: true, tooltip: { position: "tl" } },
+            { title: "短链", dataIndex: "short", ellipsis: true, tooltip: { position: "top" } },
+            { title: "长链", dataIndex: "long", ellipsis: true, tooltip: { position: "tr" } }
+        ],
+        data: []
     }
 });
+
+function on_directLink_modal_td_click(column: TableColumnData, record: TableData) {
+    if (typeof navigator.clipboard === "object" && column.dataIndex) {
+        navigator.clipboard.writeText(record[column.dataIndex]).then(() => {
+            Message.success("复制成功");
+        }).catch(() => {
+            Message.error("复制失败");
+        });
+    }
+}
 
 const renameModal = reactive<{
     visible: boolean,
@@ -680,12 +817,14 @@ function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
         <ALayoutContent>
             <div :style="contentScrollbarStyle">
                 <ATable class="file-table" :columns="tableColumns" :data="tableData" row-key="index" :pagination="false"
-                    :loading="tableLoading" @row-click="on_table_row_click" :scroll="{ y: '100%' }">
+                    :loading="tableLoading" @row-click="on_table_row_click" :scroll="{ y: '100%' }"
+                    :row-selection="tableRowSelection" @select="on_table_select" @select-all="on_table_select_all">
                     <template #tr="{ record, rowIndex }">
-                        <MyTr :record="record" :row-index="rowIndex" @contextmenu="table_cell_contextmenu" />
+                        <MyTr :record="record" :row-index="rowIndex" @contextmenu="on_table_tr_contextmenu" />
                     </template>
-                    <template #td="{ column, record, rowIndex }">
-                        <MyTd :column="column" :record="record" :row-index="rowIndex" />
+                    <template #fileName="{ record }">
+                        <img :src="getSvgByTypeAndSuffix(record.type, record.suffixType)" width="22" height="22" />
+                        {{ record.name }}
                     </template>
                     <template #empty>
                         <AEmpty style="cursor:default ;">
@@ -751,23 +890,13 @@ function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
         </AForm>
     </AModal>
 
-    <AModal title="直链" v-model:visible="directLinkModal.visible" :width="400">
-        <AForm :model="mkdirModal.form" layout="vertical" label-align="left">
-            <AFormItem field="short" label="短链">
-                <AInput v-model="directLinkModal.form.short">
-                    <template #prefix>
-                        <span><i class="fa-solid fa-link"></i></span>
-                    </template>
-                </AInput>
-            </AFormItem>
-            <AFormItem field="long" label="长链">
-                <AInput v-model="directLinkModal.form.long">
-                    <template #prefix>
-                        <span><i class="fa-solid fa-link"></i></span>
-                    </template>
-                </AInput>
-            </AFormItem>
-        </AForm>
+    <AModal title="直链" v-model:visible="directLinkModal.visible" width="auto" :footer="false"
+        body-style="padding:0 0 24px 0" @close="directLinkModal.table.data = []">
+        <ATable v-bind="directLinkModal.table" :pagination="false" :bordered="false">
+            <template #td="{ column, record }">
+                <td @click="on_directLink_modal_td_click(column, record)" :style="{ userSelect: 'none' }" />
+            </template>
+        </ATable>
     </AModal>
 
     <AModal title="重命名" v-model:visible="renameModal.visible" @ok="on_renamerModal_ok" :width="400">
