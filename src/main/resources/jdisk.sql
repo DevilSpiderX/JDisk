@@ -1,5 +1,3 @@
-
-
 /*
  Navicat Premium Data Transfer
 
@@ -13,7 +11,7 @@
  Target Server Version : 80031
  File Encoding         : 65001
 
- Date: 20/02/2023 23:21:44
+ Date: 21/02/2023 22:56:46
 */
 
 SET NAMES utf8mb4;
@@ -32,7 +30,9 @@ CREATE TABLE `direct_link`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `key`(`key`) USING BTREE,
   INDEX `driver_id`(`driver_id`) USING BTREE,
-  CONSTRAINT `driver_id` FOREIGN KEY (`driver_id`) REFERENCES `virtual_driver` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  INDEX `file`(`path`, `driver_id`) USING BTREE,
+  CONSTRAINT `driver_id` FOREIGN KEY (`driver_id`) REFERENCES `virtual_driver` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `file` FOREIGN KEY (`path`, `driver_id`) REFERENCES `virtual_file` (`path`, `driver_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 38 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
