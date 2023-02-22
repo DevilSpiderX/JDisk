@@ -6,6 +6,7 @@ import { useSystemConfigs } from "@/store/SystemConfigs";
 import { Message, Scrollbar as AScrollbar } from "@arco-design/web-vue";
 import { computed, onMounted, onUnmounted, reactive, ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
+import { useHeaderRef } from "./hooks/refs";
 
 const appConfigs = useAppConfigs(),
     systemConfigs = useSystemConfigs(),
@@ -40,9 +41,9 @@ const pageHeader = reactive({
     })
 });
 
-const header = ref();
+const headerRef = useHeaderRef();
 const headerResizeObserver = new ResizeObserver(() => {
-    const rect = header.value?.$el.getBoundingClientRect();
+    const rect = headerRef.value?.$el.getBoundingClientRect();
     headerHeight.value = rect ? rect.height : 0;
 });
 const headerHeight = ref(0);
@@ -51,8 +52,8 @@ onMounted(async () => {
     console.log("Admin,Status", resp);
     if (resp.code === 0 && !resp.data) {
         router.push({ name: "login" });
-    } else if (header.value && header.value.$el) {
-        headerResizeObserver.observe(header.value.$el);
+    } else if (headerRef.value && headerRef.value.$el) {
+        headerResizeObserver.observe(headerRef.value.$el);
     }
 });
 
@@ -96,7 +97,7 @@ useBodyNoScrollbar();
 
 <template>
     <ALayout>
-        <ALayoutHeader ref="header">
+        <ALayoutHeader ref="headerRef">
             <!-- 大于768px时用这个导航栏 -->
             <nav v-if="appConfigs.client.width >= 768">
                 <ARow class="page-header" align="stretch">

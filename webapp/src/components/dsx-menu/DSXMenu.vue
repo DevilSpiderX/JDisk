@@ -76,16 +76,16 @@ const styleObj = computed(() => ({
     "--t-origin": transformOrigin.value
 }));
 
-const DSX_Menu = ref<HTMLDivElement | null>(null);
+const DSXMenuRef = ref<HTMLDivElement | null>(null);
 
 watch(() => props.event, async event => {
     const clientWidth = document.documentElement.clientWidth;
     const clientHeight = document.documentElement.clientHeight;
 
     await nextTick();
-    if (DSX_Menu.value) {
-        const width = DSX_Menu.value.clientWidth;
-        const height = DSX_Menu.value.clientHeight;
+    if (DSXMenuRef.value) {
+        const width = DSXMenuRef.value.clientWidth;
+        const height = DSXMenuRef.value.clientHeight;
 
         const xRight = event.x + width;
         const yBottom = event.y + height;
@@ -124,7 +124,7 @@ function getItemBinds(item: MenuItemOptionType) {
 <template>
     <Teleport to="body">
         <Transition name='dsx-menu-fade'>
-            <div v-if="visible" v-bind="$attrs" class="dsx-menu" :class="classObj" :style="styleObj" ref="DSX_Menu"
+            <div v-if="visible" v-bind="$attrs" class="dsx-menu" :class="classObj" :style="styleObj" ref="DSXMenuRef"
                 @contextmenu.prevent="close">
                 <div class="dsx-menu-body">
                     <template v-if="$slots.default">

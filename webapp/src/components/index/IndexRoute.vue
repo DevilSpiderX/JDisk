@@ -7,7 +7,18 @@ import { useSystemConfigs } from "@/store/SystemConfigs";
 import { formatBytes } from "@/util/format-util";
 import { constructPath, getSuffix } from "@/util/paths";
 import { getSvgByTypeAndSuffix } from "@/util/svg-util";
-import { CustomIcon, FileItem, LayoutHeader, Message, Modal, RequestOption, TableColumnData, TableData, TableRowSelection } from "@arco-design/web-vue";
+import {
+    CustomIcon as ACustomIcon,
+    FileItem as AFileItem,
+    LayoutHeader as ALayoutHeader,
+    Message,
+    Modal,
+    RequestOption as ARequestOption,
+    TableColumnData as ATableColumnData,
+    TableData as ATableData,
+    TableRowSelection as ATableRowSelection,
+    Upload as AUpload
+} from "@arco-design/web-vue";
 import { computed, onMounted, onUnmounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import MyTr from "./components/MyTr.vue";
@@ -129,15 +140,15 @@ const breadcrumbRoutes = computed<Array<{ path: string, label: string }>>(() => 
     return result;
 });
 
-const header = ref<typeof LayoutHeader | null>(null);
+const headerRef = ref<InstanceType<typeof ALayoutHeader> | null>(null);
 const headerResizeObserver = new ResizeObserver(() => {
-    const rect = header.value?.$el.getBoundingClientRect();
+    const rect = headerRef.value?.$el.getBoundingClientRect();
     headerHeight.value = rect ? rect.height : 0;
 });
 const headerHeight = ref(0);
 onMounted(() => {
-    if (header.value && header.value.$el) {
-        headerResizeObserver.observe(header.value.$el);
+    if (headerRef.value && headerRef.value.$el) {
+        headerResizeObserver.observe(headerRef.value.$el);
     }
 });
 
@@ -156,7 +167,7 @@ const contentScrollbarStyle = reactive({
 
 const driverSelect = ref();
 
-interface MyTableData extends TableData {
+interface MyTableData extends ATableData {
     index: number,
     name: string,
     modified: string,
@@ -189,18 +200,7 @@ const tableData = computed<Array<MyTableData>>(() => {
 
             let suffixType: "video" | "image" | "audio" | "text" | "normal" | undefined = undefined;
             if (file.type === "F") {
-                const suffix = getSuffix(file.name);
-                if (systemConfigs.values.customVideoSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "video"
-                } else if (systemConfigs.values.customImageSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "image"
-                } else if (systemConfigs.values.customAudioSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "audio"
-                } else if (systemConfigs.values.customTextSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "text"
-                } else {
-                    suffixType = "normal"
-                }
+                suffixType = getFileSuffixType(getSuffix(file.name));
             }
 
             const size = file.size ? formatBytes(file.size, 2, " ") : "-";
@@ -237,6 +237,20 @@ const tableData = computed<Array<MyTableData>>(() => {
     return list;
 });
 
+function getFileSuffixType(suffix: string) {
+    if (systemConfigs.values.customVideoSuffix.indexOf(suffix) !== -1) {
+        return "video";
+    } else if (systemConfigs.values.customImageSuffix.indexOf(suffix) !== -1) {
+        return "image";
+    } else if (systemConfigs.values.customAudioSuffix.indexOf(suffix) !== -1) {
+        return "audio";
+    } else if (systemConfigs.values.customTextSuffix.indexOf(suffix) !== -1) {
+        return "text";
+    } else {
+        return "normal";
+    }
+}
+
 function getNumByType(a: MyTableData) {
     if (a.type === "back") {
         return 0;
@@ -266,7 +280,7 @@ const tableColumns = computed(() => {
     }
 });
 
-function on_table_row_click(record: TableData) {
+function on_table_row_click(record: ATableData) {
     switch (record.type) {
         case "D": {
             const dir = fileList.value[record.index];
@@ -322,7 +336,7 @@ async function download(file: MyFile) {
     Message.error("下载失败");
 }
 
-const tableRowSelection = reactive<TableRowSelection>({
+const tableRowSelection = reactive<ATableRowSelection>({
     type: "checkbox",
     selectedRowKeys: [],
     showCheckedAll: true
@@ -556,8 +570,8 @@ async function on_mkdirModal_ok() {
 const directLinkModal = reactive<{
     visible: boolean,
     table: {
-        columns: Array<TableColumnData>,
-        data: Array<TableData>
+        columns: Array<ATableColumnData>,
+        data: Array<ATableData>
     }
 }>({
     visible: false,
@@ -571,7 +585,7 @@ const directLinkModal = reactive<{
     }
 });
 
-function on_directLink_modal_td_click(column: TableColumnData, record: TableData) {
+function on_directLink_modal_td_click(column: ATableColumnData, record: ATableData) {
     if (typeof navigator.clipboard === "object" && column.dataIndex) {
         navigator.clipboard.writeText(record[column.dataIndex]).then(() => {
             Message.success("复制成功");
@@ -616,9 +630,9 @@ async function on_renamerModal_ok() {
 
 const uploadMoadl = reactive<{
     visible: boolean,
-    fileList: Array<FileItem>,
+    fileList: Array<AFileItem>,
     onClose: () => void,
-    customIcon: CustomIcon
+    customIcon: ACustomIcon
 }>({
     visible: false,
     fileList: [],
@@ -626,28 +640,14 @@ const uploadMoadl = reactive<{
         location.reload();
     },
     customIcon: {
-        fileIcon: (fileItem: FileItem) => {
-            let suffixType: "video" | "image" | "audio" | "text" | "normal" | undefined = undefined;
-            if (fileItem.name) {
-                const suffix = getSuffix(fileItem.name);
-                if (systemConfigs.values.customVideoSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "video"
-                } else if (systemConfigs.values.customImageSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "image"
-                } else if (systemConfigs.values.customAudioSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "audio"
-                } else if (systemConfigs.values.customTextSuffix.indexOf(suffix) !== -1) {
-                    suffixType = "text"
-                } else {
-                    suffixType = "normal"
-                }
-            }
+        fileIcon: (fileItem: AFileItem) => {
+            const suffixType = fileItem.name ? getFileSuffixType(getSuffix(fileItem.name)) : undefined;
             return <img src={getSvgByTypeAndSuffix("F", suffixType)} width="16" height="16" />
         }
     }
 });
 
-function uploadModalCustomRequest(option: RequestOption) {
+function uploadModalCustomRequest(option: ARequestOption) {
     const { onProgress, onError, onSuccess, fileItem } = option;
     const abortController = new AbortController()
 
@@ -681,16 +681,18 @@ function uploadModalCustomRequest(option: RequestOption) {
     }
 }
 
-const uploadingList = ref<Array<FileItem>>([]);
-const waitingList = ref<Array<FileItem>>([]);
-const uploadRef = ref();
+const uploadingList = ref<Array<AFileItem>>([]);
+const waitingList = ref<Array<AFileItem>>([]);
+const uploadRef = ref<InstanceType<typeof AUpload> | null>(null);
 
-function uploadFileItem(item: FileItem) {
-    uploadRef.value.submit(item);
-    uploadingList.value.push(item);
+function uploadFileItem(item: AFileItem) {
+    if (uploadRef.value) {
+        uploadRef.value.submit(item);
+        uploadingList.value.push(item);
+    }
 }
 
-function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
+function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
     const maxFileUploads = systemConfigs.values.maxFileUploads;
     if (item.status === "init") {
         if (uploadingList.value.length < maxFileUploads) {
@@ -714,7 +716,7 @@ function on_fileItme_status_change(fileList: FileItem[], item: FileItem) {
 
 <template>
     <ALayout>
-        <ALayoutHeader ref="header">
+        <ALayoutHeader ref="headerRef">
             <APageHeader class="page-header" :show-back="false">
                 <template #title>
                     <ARow class="logo" align="center" style="margin-left: 12px">
