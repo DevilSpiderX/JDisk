@@ -63,82 +63,84 @@ function deleteDriver(id) {
         <ALayoutContent>
             <ARow justify="center" :style="{ padding }">
                 <ACol :xs="24" :md="20">
-                    <ACard :loading="card_loading">
-                        <ACardMeta title="驱动器信息" description="此页可以维护您的驱动器信息" style="margin-bottom: 1rem" />
-                        <ARow :gutter="[20, 20]">
-                            <ACol v-for="driver in driverList.value" :xs="24" :md="12" :lg="8" :xl="6">
-                                <ASpin :loading="spin_loading[driver.key]" tip="驱动器扫描中..." dot
-                                    style="width: 100%;height: 100%">
-                                    <ACard class="driver-card" hoverable>
-                                        <div class="info-wrapper">
-                                            <div class="image-wrapper">
-                                                <img src="@/assets/driver.svg" width="80" height="80" />
-                                            </div>
-                                            <template v-if="!driver.remark || driver.remark === ''">
-                                                <h3 class="driver-name">{{ driver.name }}</h3>
-                                            </template>
-                                            <ATooltip v-else :content="driver.remark">
-                                                <h3 class="driver-name">{{ driver.name }}</h3>
-                                            </ATooltip>
-                                            <div class="tag-wrapper">
-                                                <ATag v-if="driver.enable" color="green" size="large">启用</ATag>
-                                                <ATag v-else color="red" size="large">停用</ATag>
-                                            </div>
-                                        </div>
-                                        <AButtonGroup size="large">
-                                            <AButton @click="$router.push(`./driver-edit/${driver.id}`)">
-                                                <template #icon>
-                                                    <i class="fa-solid fa-pen-to-square"></i>
+                    <ASpin :loading="card_loading" style="width: 100%;height: 100%">
+                        <ACard>
+                            <ACardMeta title="驱动器信息" description="此页可以维护您的驱动器信息" style="margin-bottom: 1rem" />
+                            <ARow :gutter="[20, 20]">
+                                <ACol v-for="driver in driverList.value" :xs="24" :md="12" :lg="8" :xl="6">
+                                    <ASpin :loading="spin_loading[driver.key]" tip="驱动器扫描中..." dot
+                                        style="width: 100%;height: 100%">
+                                        <ACard class="driver-card" hoverable>
+                                            <div class="info-wrapper">
+                                                <div class="image-wrapper">
+                                                    <img src="@/assets/driver.svg" width="80" height="80" />
+                                                </div>
+                                                <template v-if="!driver.remark || driver.remark === ''">
+                                                    <h3 class="driver-name">{{ driver.name }}</h3>
                                                 </template>
-                                                编 辑
-                                            </AButton>
-                                            <ADropdown trigger="hover">
-                                                <AButton>
+                                                <ATooltip v-else :content="driver.remark">
+                                                    <h3 class="driver-name">{{ driver.name }}</h3>
+                                                </ATooltip>
+                                                <div class="tag-wrapper">
+                                                    <ATag v-if="driver.enable" color="green" size="large">启用</ATag>
+                                                    <ATag v-else color="red" size="large">停用</ATag>
+                                                </div>
+                                            </div>
+                                            <AButtonGroup size="large">
+                                                <AButton @click="$router.push(`./driver-edit/${driver.id}`)">
                                                     <template #icon>
-                                                        <i class="fa-solid fa-ellipsis"></i>
+                                                        <i class="fa-solid fa-pen-to-square"></i>
                                                     </template>
-                                                    更 多
+                                                    编 辑
                                                 </AButton>
-                                                <template #content>
-                                                    <ADoption @click="$router.push(`/${driver.key}`)">
+                                                <ADropdown trigger="hover">
+                                                    <AButton>
                                                         <template #icon>
-                                                            <i class="fa-solid fa-folder"></i>
+                                                            <i class="fa-solid fa-ellipsis"></i>
                                                         </template>
-                                                        访 问
-                                                    </ADoption>
-                                                    <ADoption @click="$router.push(`./driver-edit/${driver.id}`)">
-                                                        <template #icon>
-                                                            <i class="fa-solid fa-pen-to-square"></i>
-                                                        </template>
-                                                        编 辑
-                                                    </ADoption>
-                                                    <ADoption @click="scanDriver(driver.id)">
-                                                        <template #icon>
-                                                            <i class="fa-solid fa-folder-magnifying-glass"></i>
-                                                        </template>
-                                                        扫 描
-                                                    </ADoption>
-                                                    <ADoption @click="deleteDriver(driver.id)">
-                                                        <template #icon>
-                                                            <i class="fa-solid fa-trash-xmark"></i>
-                                                        </template>
-                                                        删 除
-                                                    </ADoption>
-                                                </template>
-                                            </ADropdown>
-                                        </AButtonGroup>
+                                                        更 多
+                                                    </AButton>
+                                                    <template #content>
+                                                        <ADoption @click="$router.push(`/${driver.key}`)">
+                                                            <template #icon>
+                                                                <i class="fa-solid fa-folder"></i>
+                                                            </template>
+                                                            访 问
+                                                        </ADoption>
+                                                        <ADoption @click="$router.push(`./driver-edit/${driver.id}`)">
+                                                            <template #icon>
+                                                                <i class="fa-solid fa-pen-to-square"></i>
+                                                            </template>
+                                                            编 辑
+                                                        </ADoption>
+                                                        <ADoption @click="scanDriver(driver.id)">
+                                                            <template #icon>
+                                                                <i class="fa-solid fa-folder-magnifying-glass"></i>
+                                                            </template>
+                                                            扫 描
+                                                        </ADoption>
+                                                        <ADoption @click="deleteDriver(driver.id)">
+                                                            <template #icon>
+                                                                <i class="fa-solid fa-trash-xmark"></i>
+                                                            </template>
+                                                            删 除
+                                                        </ADoption>
+                                                    </template>
+                                                </ADropdown>
+                                            </AButtonGroup>
+                                        </ACard>
+                                    </ASpin>
+                                </ACol>
+                                <ACol :xs="24" :md="12" :lg="8" :xl="6">
+                                    <ACard class="driver-card" hoverable>
+                                        <div class="plus-wrapper" @click="$router.push('./driver-edit')">
+                                            <span><i class="fa-solid fa-plus"></i></span>
+                                        </div>
                                     </ACard>
-                                </ASpin>
-                            </ACol>
-                            <ACol :xs="24" :md="12" :lg="8" :xl="6">
-                                <ACard class="driver-card" hoverable>
-                                    <div class="plus-wrapper" @click="$router.push('./driver-edit')">
-                                        <span><i class="fa-solid fa-plus"></i></span>
-                                    </div>
-                                </ACard>
-                            </ACol>
-                        </ARow>
-                    </ACard>
+                                </ACol>
+                            </ARow>
+                        </ACard>
+                    </ASpin>
                 </ACol>
             </ARow>
         </ALayoutContent>

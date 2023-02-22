@@ -1,3 +1,4 @@
+import { useSystemConfigs } from "@/store/SystemConfigs";
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
@@ -100,9 +101,11 @@ const router = createRouter({
 });
 
 router.beforeEach(function (to, from, next) {
+    const systemConfigs = useSystemConfigs();
     const title = to.meta.title;
     if (title && typeof title === "string") {
-        document.title = title;
+        const siteName = systemConfigs.values.siteName;
+        document.title = siteName === "" ? title : title.replace("JDisk", siteName);
     } else {
         document.title = "JDisk";
     }

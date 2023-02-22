@@ -19,7 +19,7 @@ import {
     TableRowSelection as ATableRowSelection,
     Upload as AUpload
 } from "@arco-design/web-vue";
-import { computed, onMounted, onUnmounted, reactive, ref, watch, watchEffect } from "vue";
+import { computed, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import MyTr from "./components/MyTr.vue";
 import { useTableBodyScrollWrap } from "./hooks/table-body-scroll-wrap";
@@ -140,31 +140,6 @@ const breadcrumbRoutes = computed<Array<{ path: string, label: string }>>(() => 
     return result;
 });
 
-const headerRef = ref<InstanceType<typeof ALayoutHeader> | null>(null);
-const headerResizeObserver = new ResizeObserver(() => {
-    const rect = headerRef.value?.$el.getBoundingClientRect();
-    headerHeight.value = rect ? rect.height : 0;
-});
-const headerHeight = ref(0);
-onMounted(() => {
-    if (headerRef.value && headerRef.value.$el) {
-        headerResizeObserver.observe(headerRef.value.$el);
-    }
-});
-
-onUnmounted(() => {
-    headerResizeObserver?.disconnect();
-});
-
-const contentScrollbarStyle = reactive({
-    overflow: "auto",
-    width: "100%",
-    height: computed(() => {
-        const height = appConfigs.client.height - headerHeight.value;
-        return height <= 0 ? "0" : `${height}px`;
-    })
-});
-
 const driverSelect = ref();
 
 interface MyTableData extends ATableData {
@@ -280,6 +255,7 @@ const tableColumns = computed(() => {
     }
 });
 
+// 单击文件
 function on_table_row_click(record: ATableData) {
     switch (record.type) {
         case "D": {
@@ -300,16 +276,25 @@ function on_table_row_click(record: ATableData) {
         case "F": {
             const file = fileList.value[record.index];
             console.log(file);
-            Modal.info({
-                title: "下载",
-                titleAlign: "center",
-                width: "auto",
-                content: `确认下载${file.name}？`,
-                hideCancel: false,
-                onOk: () => {
-                    download(file);
+            switch (record.suffixType) {
+                case "image": {
+                    previewImages(file);
+                    break;
                 }
-            });
+                default: {
+                    Modal.info({
+                        title: "下载",
+                        titleAlign: "center",
+                        width: "auto",
+                        content: `确认下载${file.name}？`,
+                        hideCancel: false,
+                        onOk: () => {
+                            download(file);
+                        }
+                    });
+                    break;
+                }
+            }
             break;
         }
         case "driver": {
@@ -320,6 +305,7 @@ function on_table_row_click(record: ATableData) {
     }
 }
 
+// 下载文件
 async function download(file: MyFile) {
     if (driver.value) {
         const resp = await http.signature.apply(file.path, driver.value.key);
@@ -336,6 +322,41 @@ async function download(file: MyFile) {
     Message.error("下载失败");
 }
 
+// 预览图片文件
+async function previewImages(currentImage: MyFile) {
+    imagePreview.srcList = [];
+
+    const imageList: Array<MyFile> = [];
+    for (const data of tableData.value) {
+        if (data.suffixType === "image") {
+            imageList.push(fileList.value[data.index]);
+        }
+    }
+    if (driver.value) {
+        let allPath = "";
+        for (const img of imageList) {
+            allPath += img.path;
+        }
+
+        const resp = await http.signature.apply(allPath, driver.value.key);
+        if (resp.code === 0) {
+            const sign = resp.data;
+            const driverKey = encodeURI(driver.value.key);
+            for (let i = 0; i < imageList.length; i++) {
+                const img = imageList[i];
+                const imgPath = encodeURI(img.path);
+                imagePreview.srcList.push(`${location.origin}/dl/${driverKey}${imgPath}`
+                    + (sign === "" ? "" : `?signature=${sign}`));
+                if (img === currentImage) {
+                    imagePreview.current = i;
+                }
+            }
+            imagePreview.visible = true;
+        }
+    }
+}
+
+// 文件选择器
 const tableRowSelection = reactive<ATableRowSelection>({
     type: "checkbox",
     selectedRowKeys: [],
@@ -364,11 +385,7 @@ function on_table_select_all(checked: boolean) {
     }
 }
 
-const drawer = reactive({
-    visible: false,
-    empty_form: {}
-});
-
+// 右键菜单
 const { tableMenu } = useTableMenu();
 const { tableBodyScrollWrap } = useTableBodyScrollWrap(".file-table");
 
@@ -545,6 +562,13 @@ function removeTableMenuListener() {
     window.removeEventListener("resize", tableMenu_close);
 }
 
+// 设置抽屉
+const drawer = reactive({
+    visible: false,
+    empty_form: {}
+});
+
+// 新建文件夹模态框
 const mkdirModal = reactive({
     visible: false,
     form: {
@@ -567,6 +591,7 @@ async function on_mkdirModal_ok() {
     }
 }
 
+// 查看直链模态框
 const directLinkModal = reactive<{
     visible: boolean,
     table: {
@@ -595,6 +620,7 @@ function on_directLink_modal_td_click(column: ATableColumnData, record: ATableDa
     }
 }
 
+// 重命名模态框
 const renameModal = reactive<{
     visible: boolean,
     form: {
@@ -628,6 +654,7 @@ async function on_renamerModal_ok() {
     tableLoading.value = false;
 }
 
+// 文件上传模态框
 const uploadMoadl = reactive<{
     visible: boolean,
     fileList: Array<AFileItem>,
@@ -712,11 +739,18 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
     }
 }
 
+// 图片预览组件
+const imagePreview = reactive<{ visible: boolean, current: number, srcList: Array<string> }>({
+    visible: false,
+    current: 0,
+    srcList: []
+});
+
 </script>
 
 <template>
-    <ALayout>
-        <ALayoutHeader ref="headerRef">
+    <ALayout style="height: 100%">
+        <ALayoutHeader>
             <APageHeader class="page-header" :show-back="false">
                 <template #title>
                     <ARow class="logo" align="center" style="margin-left: 12px">
@@ -816,31 +850,31 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
                 </template>
             </APageHeader>
         </ALayoutHeader>
-        <ALayoutContent>
-            <div :style="contentScrollbarStyle">
-                <ATable class="file-table" :columns="tableColumns" :data="tableData" row-key="index" :pagination="false"
-                    :loading="tableLoading" @row-click="on_table_row_click" :scroll="{ y: '100%' }"
-                    :row-selection="tableRowSelection" @select="on_table_select" @select-all="on_table_select_all">
-                    <template #tr="{ record, rowIndex }">
-                        <MyTr :record="record" :row-index="rowIndex" @contextmenu="on_table_tr_contextmenu" />
-                    </template>
-                    <template #fileName="{ record }">
-                        <img :src="getSvgByTypeAndSuffix(record.type, record.suffixType)" width="22" height="22" />
-                        {{ record.name }}
-                    </template>
-                    <template #empty>
-                        <AEmpty style="cursor:default ;">
-                            暂无驱动器可用，请先添加或启动至少一个驱动器
-                        </AEmpty>
-                    </template>
-                </ATable>
-            </div>
+        <ALayoutContent style="height: 1px">
+            <ATable class="file-table" :columns="tableColumns" :data="tableData" row-key="index" :pagination="false"
+                :loading="tableLoading" @row-click="on_table_row_click" :scroll="{ y: '100%' }"
+                :row-selection="tableRowSelection" @select="on_table_select" @select-all="on_table_select_all">
+                <template #tr="{ record, rowIndex }">
+                    <MyTr :record="record" :row-index="rowIndex" @contextmenu="on_table_tr_contextmenu" />
+                </template>
+                <template #fileName="{ record }">
+                    <img :src="getSvgByTypeAndSuffix(record.type, record.suffixType)" width="22" height="22" />
+                    {{ record.name }}
+                </template>
+                <template #empty>
+                    <AEmpty style="cursor:default ;">
+                        暂无驱动器可用，请先添加或启动至少一个驱动器
+                    </AEmpty>
+                </template>
+            </ATable>
         </ALayoutContent>
     </ALayout>
 
+    <!-- 右键菜单 -->
     <DSXMenu v-model:visible="tableMenu.visible" :event="tableMenu.event" :menus="tableMenu.menus" min-width="100px"
         :style="tableMenu.style" :z-index="1002" />
 
+    <!-- 设置抽屉 -->
     <ADrawer v-model:visible="drawer.visible" :footer="false">
         <template #header>
             <ARow justify="space-between" style="width: 100%;">
@@ -880,6 +914,7 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
         </AForm>
     </ADrawer>
 
+    <!-- 新建文件夹模态框 -->
     <AModal title="新建文件夹" v-model:visible="mkdirModal.visible" @ok="on_mkdirModal_ok" :width="400">
         <AForm :model="mkdirModal.form" layout="vertical" label-align="left">
             <AFormItem field="dirName" label="文件夹名" required>
@@ -892,6 +927,7 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
         </AForm>
     </AModal>
 
+    <!-- 查看直链模态框 -->
     <AModal title="直链" v-model:visible="directLinkModal.visible" width="auto" :footer="false"
         body-style="padding:0 0 24px 0" @close="directLinkModal.table.data = []">
         <ATable v-bind="directLinkModal.table" :pagination="false" :bordered="false">
@@ -901,6 +937,7 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
         </ATable>
     </AModal>
 
+    <!-- 重命名模态框 -->
     <AModal title="重命名" v-model:visible="renameModal.visible" @ok="on_renamerModal_ok" :width="400">
         <AForm :model="renameModal.form" layout="vertical" label-align="left">
             <AFormItem field="name" label="新名字" required>
@@ -913,12 +950,17 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
         </AForm>
     </AModal>
 
+    <!-- 文件上传模态框 -->
     <AModal title="上传文件" v-model:visible="uploadMoadl.visible" width="90%" :footer="false" draggable
         @close="uploadMoadl.onClose">
         <AUpload v-model:file-list="uploadMoadl.fileList" ref="uploadRef" multiple draggable
             :custom-request="uploadModalCustomRequest" :auto-upload="false" :custom-icon="uploadMoadl.customIcon"
             @change="on_fileItme_status_change" />
     </AModal>
+
+    <!-- 图片预览组件 -->
+    <AImagePreviewGroup v-model:visible="imagePreview.visible" v-model:current="imagePreview.current" infinite
+        :src-list="imagePreview.srcList" />
 </template>
 
 <style scoped>

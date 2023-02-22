@@ -39,6 +39,7 @@ watch(() => directLinkList.value, data => {
 });
 
 function getTableDataByCondition(source) {
+    tableRowSelection.selectedRowKeys = [];
     const result = [];
     for (let i = 0; i < source.length; i++) {
         const data = source[i];
@@ -104,6 +105,14 @@ const tableScroll = reactive({
     })
 });
 
+const tablePaginationProps = reactive({
+    current: 1,
+    "onUpdate:current": newCurrent => {
+        tablePaginationProps.current = newCurrent;
+        tableRowSelection.selectedRowKeys = [];
+    }
+});
+
 const tableRowSelection = reactive({
     type: "checkbox",
     selectedRowKeys: [],
@@ -116,15 +125,14 @@ function on_table_select(rowKeys) {
 
 function on_table_select_all(checked) {
     if (checked) {
-        for (const data of tableData.value) {
-            tableRowSelection.selectedRowKeys.push(data.index);
+        const start = (tablePaginationProps.current - 1) * 10;
+        for (let i = start; i < start + 10; i++) {
+            tableRowSelection.selectedRowKeys.push(tableData.value[i].index);
         }
     } else {
         tableRowSelection.selectedRowKeys = [];
     }
 }
-
-window.generate = http.directLink.generate;
 
 const tableLoading = ref(false);
 
@@ -178,77 +186,79 @@ function on_delete_button_click(record) {
         <ALayoutContent>
             <ARow justify="center" :style="{ padding }">
                 <ACol :xs="24" :md="20">
-                    <ACard :loading="card_loading">
-                        <ACardMeta title="直链管理" style="margin-bottom: 1rem" />
-                        <ARow :gutter="[20, 20]">
-                            <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
-                                <ARow align="center">
-                                    <ACol :span="5">
-                                        <label>驱动器</label>
-                                    </ACol>
-                                    <ACol :span="19">
-                                        <ASelect v-model="selectDriverId" placeholder="请选择" allow-clear>
-                                            <AOption v-for="driver of driverList.value" :value="driver.id"
-                                                :disabled="!driver.enable">
-                                                {{ driver.name }}
-                                            </AOption>
-                                        </ASelect>
-                                    </ACol>
-                                </ARow>
-                            </ACol>
-                            <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
-                                <ARow align="center">
-                                    <ACol :span="5">
-                                        <label>文件名</label>
-                                    </ACol>
-                                    <ACol :span="19">
-                                        <AInput v-model="fileName" allow-clear />
-                                    </ACol>
-                                </ARow>
-                            </ACol>
-                            <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
-                                <ARow align="center">
-                                    <ACol :span="5">
-                                        <label>短链key</label>
-                                    </ACol>
-                                    <ACol :span="19">
-                                        <AInput v-model="directKey" allow-clear />
-                                    </ACol>
-                                </ARow>
-                            </ACol>
-                            <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
-                                <ARow align="center">
-                                    <ACol :span="5">
-                                        <label>创建时间</label>
-                                    </ACol>
-                                    <ACol :span="19">
-                                        <ARangePicker v-model="rangeDate" />
-                                    </ACol>
-                                </ARow>
-                            </ACol>
-                            <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
-                                <AButton type="primary" size="large" :disabled="tableLoading"
-                                    @click="on_search_button_click">
-                                    查 询
+                    <ASpin :loading="card_loading" style="width: 100%;height: 100%">
+                        <ACard>
+                            <ACardMeta title="直链管理" style="margin-bottom: 1rem" />
+                            <ARow :gutter="[20, 20]">
+                                <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
+                                    <ARow align="center">
+                                        <ACol :span="5">
+                                            <label>驱动器</label>
+                                        </ACol>
+                                        <ACol :span="19">
+                                            <ASelect v-model="selectDriverId" placeholder="请选择" allow-clear>
+                                                <AOption v-for="driver of driverList.value" :value="driver.id"
+                                                    :disabled="!driver.enable">
+                                                    {{ driver.name }}
+                                                </AOption>
+                                            </ASelect>
+                                        </ACol>
+                                    </ARow>
+                                </ACol>
+                                <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
+                                    <ARow align="center">
+                                        <ACol :span="5">
+                                            <label>文件名</label>
+                                        </ACol>
+                                        <ACol :span="19">
+                                            <AInput v-model="fileName" allow-clear />
+                                        </ACol>
+                                    </ARow>
+                                </ACol>
+                                <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
+                                    <ARow align="center">
+                                        <ACol :span="5">
+                                            <label>短链key</label>
+                                        </ACol>
+                                        <ACol :span="19">
+                                            <AInput v-model="directKey" allow-clear />
+                                        </ACol>
+                                    </ARow>
+                                </ACol>
+                                <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
+                                    <ARow align="center">
+                                        <ACol :span="5">
+                                            <label>创建时间</label>
+                                        </ACol>
+                                        <ACol :span="19">
+                                            <ARangePicker v-model="rangeDate" />
+                                        </ACol>
+                                    </ARow>
+                                </ACol>
+                                <ACol :xs="22" :sm="16" :md="12" :xl="8" :xxl="6">
+                                    <AButton type="primary" size="large" :disabled="tableLoading"
+                                        @click="on_search_button_click">
+                                        查 询
+                                    </AButton>
+                                </ACol>
+                            </ARow>
+                            <div style="margin: 10px 0 10px 0">
+                                <AButton type="primary" size="large" status="danger" @click="on_batch_delete_button_click"
+                                    :disabled="tableLoading">
+                                    批量删除
                                 </AButton>
-                            </ACol>
-                        </ARow>
-                        <div style="margin: 10px 0 10px 0">
-                            <AButton type="primary" size="large" status="danger" @click="on_batch_delete_button_click"
-                                :disabled="tableLoading">
-                                批量删除
-                            </AButton>
-                        </div>
-                        <ATable :columns="tableColumns" :data="tableData" row-key="index" :scroll="tableScroll"
-                            :pagination="false" :row-selection="tableRowSelection" @select="on_table_select"
-                            @select-all="on_table_select_all" :loading="tableLoading">
-                            <template #operate="{ record }">
-                                <AButton type="primary" status="danger" @click="on_delete_button_click(record)">
-                                    删 除
-                                </AButton>
-                            </template>
-                        </ATable>
-                    </ACard>
+                            </div>
+                            <ATable :columns="tableColumns" :data="tableData" row-key="index" :scroll="tableScroll"
+                                :pagination="tablePaginationProps" :row-selection="tableRowSelection"
+                                @select="on_table_select" @select-all="on_table_select_all" :loading="tableLoading">
+                                <template #operate="{ record }">
+                                    <AButton type="primary" status="danger" @click="on_delete_button_click(record)">
+                                        删 除
+                                    </AButton>
+                                </template>
+                            </ATable>
+                        </ACard>
+                    </ASpin>
                 </ACol>
             </ARow>
         </ALayoutContent>

@@ -4,9 +4,8 @@ import { http } from "@/scripts/http";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useSystemConfigs } from "@/store/SystemConfigs";
 import { Message, Scrollbar as AScrollbar } from "@arco-design/web-vue";
-import { computed, onMounted, onUnmounted, reactive, ref, watchEffect } from 'vue';
+import { computed, reactive, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
-import { useHeaderRef } from "./hooks/refs";
 
 const appConfigs = useAppConfigs(),
     systemConfigs = useSystemConfigs(),
@@ -41,36 +40,6 @@ const pageHeader = reactive({
     })
 });
 
-const headerRef = useHeaderRef();
-const headerResizeObserver = new ResizeObserver(() => {
-    const rect = headerRef.value?.$el.getBoundingClientRect();
-    headerHeight.value = rect ? rect.height : 0;
-});
-const headerHeight = ref(0);
-onMounted(async () => {
-    const resp = await http.admin.status();
-    console.log("Admin,Status", resp);
-    if (resp.code === 0 && !resp.data) {
-        router.push({ name: "login" });
-    } else if (headerRef.value && headerRef.value.$el) {
-        headerResizeObserver.observe(headerRef.value.$el);
-    }
-});
-
-onUnmounted(() => {
-    headerResizeObserver?.disconnect();
-});
-
-const contentScrollbarStyle = reactive({
-    overflow: "auto",
-    width: "100%",
-    height: computed(() => {
-        const height = appConfigs.client.height - headerHeight.value;
-        return height <= 0 ? "0" : `${height}px`;
-    }),
-    backgroundColor: "var(--color-secondary)"
-});
-
 const collapseMenu = reactive({
     show: false
 });
@@ -96,8 +65,8 @@ useBodyNoScrollbar();
 </script>
 
 <template>
-    <ALayout>
-        <ALayoutHeader ref="headerRef">
+    <ALayout style="height: 100%">
+        <ALayoutHeader>
             <!-- 大于768px时用这个导航栏 -->
             <nav v-if="appConfigs.client.width >= 768">
                 <ARow class="page-header" align="stretch">
@@ -173,8 +142,8 @@ useBodyNoScrollbar();
                 </div>
             </Transition>
         </div>
-        <ALayoutContent>
-            <AScrollbar :style="contentScrollbarStyle">
+        <ALayoutContent style="height: 1px">
+            <AScrollbar class="content-scrollbar" outer-class="content-scrollbar">
                 <RouterView />
             </AScrollbar>
         </ALayoutContent>
@@ -203,7 +172,7 @@ useBodyNoScrollbar();
     width: 100%;
     padding: 10px 10px 0;
     z-index: 101;
-    background-color: var(--color-bg-1);
+    background-color: var(--color-menu-light-bg);
     border-bottom: 1px solid #84858d55;
     position: absolute;
     overflow: hidden;
@@ -223,5 +192,12 @@ useBodyNoScrollbar();
 .collapse-enter-to,
 .collapse-leave-from {
     transform: scaleY(1);
+}
+
+:deep(.content-scrollbar) {
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-secondary);
 }
 </style>
