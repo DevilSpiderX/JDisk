@@ -1,11 +1,9 @@
-import { onMounted, ref } from "vue";
+import { Table as ATable } from "@arco-design/web-vue";
+import { computed, Ref } from "vue";
 
-export function useTableBodyScrollWrap(tableSelector: string) {
-    const tableBodyScrollWrap = ref<HTMLDivElement | null>(null);
-
-    onMounted(() => {
-        tableBodyScrollWrap.value = document.querySelector(tableSelector + ' .arco-scrollbar-container.arco-table-body');
-    });
+export function useTableBodyScrollWrap(tableRef: Ref<InstanceType<typeof ATable> | null>) {
+    const tableBodyScrollWrap = computed<HTMLDivElement | null>(() => tableRef.value ?
+        tableRef.value.$el.querySelector(".arco-scrollbar-container.arco-table-body") : null);
 
     function setTableScrollLeft(num: number) {
         if (tableBodyScrollWrap.value)

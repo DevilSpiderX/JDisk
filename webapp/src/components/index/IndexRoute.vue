@@ -14,6 +14,7 @@ import {
     Message,
     Modal,
     RequestOption as ARequestOption,
+    Table as ATable,
     TableColumnData as ATableColumnData,
     TableData as ATableData,
     TableRowSelection as ATableRowSelection,
@@ -142,6 +143,9 @@ const breadcrumbRoutes = computed<Array<{ path: string, label: string }>>(() => 
 
 const driverSelect = ref();
 
+const fileTableRef = ref<InstanceType<typeof ATable> | null>(null);
+const { tableBodyScrollWrap, setTableScrollTop } = useTableBodyScrollWrap(fileTableRef);
+
 interface MyTableData extends ATableData {
     index: number,
     name: string,
@@ -209,6 +213,8 @@ const tableData = computed<Array<MyTableData>>(() => {
             }
         }
     }
+
+    setTableScrollTop(0);
     return list;
 });
 
@@ -387,7 +393,6 @@ function on_table_select_all(checked: boolean) {
 
 // 右键菜单
 const { tableMenu } = useTableMenu();
-const { tableBodyScrollWrap } = useTableBodyScrollWrap(".file-table");
 
 function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: PointerEvent) {
     //0打开 1下载  2生成直链  3分隔符  4重命名  5删除
@@ -763,9 +768,9 @@ const imagePreview = reactive<{ visible: boolean, current: number, srcList: Arra
                 <template #breadcrumb>
                     <ABreadcrumb>
                         <ABreadcrumbItem v-for="route of breadcrumbRoutes">
-                            <ALink :href="route.path">
+                            <RouterLink :to="route.path">
                                 {{ route.label }}
-                            </ALink>
+                            </RouterLink>
                         </ABreadcrumbItem>
                     </ABreadcrumb>
                 </template>
@@ -852,7 +857,7 @@ const imagePreview = reactive<{ visible: boolean, current: number, srcList: Arra
         </ALayoutHeader>
         <ALayoutContent style="height: 1px">
             <ATable class="file-table" :columns="tableColumns" :data="tableData" row-key="index" :pagination="false"
-                :loading="tableLoading" @row-click="on_table_row_click" :scroll="{ y: '100%' }"
+                :loading="tableLoading" @row-click="on_table_row_click" :scroll="{ y: '100%' }" ref="fileTableRef"
                 :row-selection="tableRowSelection" @select="on_table_select" @select-all="on_table_select_all">
                 <template #tr="{ record, rowIndex }">
                     <MyTr :record="record" :row-index="rowIndex" @contextmenu="on_table_tr_contextmenu" />
