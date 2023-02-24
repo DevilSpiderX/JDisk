@@ -23,6 +23,7 @@ import {
 import { computed, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import MyTr from "./components/MyTr.vue";
+import VideoPreviewModal from "./components/VideoPreviewModal.vue";
 import { useTableBodyScrollWrap } from "./hooks/table-body-scroll-wrap";
 import { useTableMenu } from "./hooks/table-menu";
 
@@ -283,6 +284,10 @@ function on_table_row_click(record: ATableData) {
             const file = fileList.value[record.index];
             console.log(file);
             switch (record.suffixType) {
+                case "video": {
+                    previewVideo(file);
+                    break;
+                }
                 case "image": {
                     previewImages(file);
                     break;
@@ -358,6 +363,23 @@ async function previewImages(currentImage: MyFile) {
                 }
             }
             imagePreview.visible = true;
+        }
+    }
+}
+
+// 预览视频文件
+async function previewVideo(currentVideo: MyFile) {
+    if (driver.value) {
+        const videoPath = currentVideo.path;
+        const resp = await http.signature.apply(videoPath, driver.value.key);
+        if (resp.code === 0) {
+            const sign = resp.data;
+            const driverKey = encodeURI(driver.value.key);
+            const videoURL = `${location.origin}/dl/${driverKey}${videoPath}`
+                + (sign === "" ? "" : `?signature=${sign}`);
+            videoPreview.title = currentVideo.name;
+            videoPreview.src = videoURL;
+            videoPreview.visible = true;
         }
     }
 }
@@ -751,6 +773,15 @@ const imagePreview = reactive<{ visible: boolean, current: number, srcList: Arra
     srcList: []
 });
 
+const videoPreview = reactive({
+    title: "",
+    visible: false,
+    src: "",
+    onClose: () => {
+        videoPreview.src = "";
+    }
+});
+
 </script>
 
 <template>
@@ -933,8 +964,8 @@ const imagePreview = reactive<{ visible: boolean, current: number, srcList: Arra
     </AModal>
 
     <!-- 查看直链模态框 -->
-    <AModal title="直链" v-model:visible="directLinkModal.visible" width="auto" :footer="false"
-        body-style="padding:0 0 24px 0" @close="directLinkModal.table.data = []">
+    <AModal title="直链" v-model:visible="directLinkModal.visible" width="90%" :footer="false" body-style="padding:0 0 24px 0"
+        @close="directLinkModal.table.data = []">
         <ATable v-bind="directLinkModal.table" :pagination="false" :bordered="false">
             <template #td="{ column, record }">
                 <td @click="on_directLink_modal_td_click(column, record)" :style="{ userSelect: 'none' }" />
@@ -966,6 +997,10 @@ const imagePreview = reactive<{ visible: boolean, current: number, srcList: Arra
     <!-- 图片预览组件 -->
     <AImagePreviewGroup v-model:visible="imagePreview.visible" v-model:current="imagePreview.current" infinite
         :src-list="imagePreview.srcList" />
+
+    <!-- 视频预览组件 -->
+    <VideoPreviewModal :title="videoPreview.title" v-model:visible="videoPreview.visible" :videoSrc="videoPreview.src"
+        @close="videoPreview.onClose" />
 </template>
 
 <style scoped>

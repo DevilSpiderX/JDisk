@@ -22,5 +22,7 @@ declare module '@vue/runtime-core' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     UpdatePassword: typeof import('./src/components/admin/components/update-password/UpdatePassword.vue')['default']
+    VideoModal: typeof import('./src/components/index/components/VideoModal.vue')['default']
+    VideoPreviewModal: typeof import('./src/components/index/components/VideoPreviewModal.vue')['default']
   }
 }
