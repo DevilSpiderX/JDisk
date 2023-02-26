@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import zdy.graduation.design.jdisk.core.service.SQLTableService;
 import zdy.graduation.design.jdisk.core.service.SystemConfigService;
 
 import java.io.FileWriter;
@@ -16,7 +17,9 @@ import java.lang.management.ManagementFactory;
 @Component
 public class JDiskRunner implements ApplicationRunner {
     private final Logger logger = LoggerFactory.getLogger(JDiskRunner.class);
-    @Resource(name = "systemConfigService")
+    @Resource
+    private SQLTableService sqlTableService;
+    @Resource
     private SystemConfigService systemConfigService;
 
     @Override
@@ -28,6 +31,7 @@ public class JDiskRunner implements ApplicationRunner {
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
+        sqlTableService.initTables();
         systemConfigService.init();
     }
 
