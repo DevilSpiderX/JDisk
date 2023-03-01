@@ -414,44 +414,38 @@ function on_table_select_all(checked: boolean) {
 }
 
 // 右键菜单
-const { tableMenu } = useTableMenu();
+const tableMenu = reactive(useTableMenu());
 
 function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: PointerEvent) {
-    //0打开 1下载  2生成直链  3分隔符  4重命名  5删除
-    function setMenus3HiddenValue() {
-        tableMenu.menus[3].hidden = (tableMenu.menus[4].hidden && tableMenu.menus[5].hidden) ||
-            (tableMenu.menus[0].hidden && tableMenu.menus[1].hidden && tableMenu.menus[2].hidden);
-    }
-
     if (driver.value) {
-        tableMenu.menus[4].disabled = !driver.value.enableFileOperator;
-        tableMenu.menus[5].disabled = !driver.value.enableFileOperator;
+        tableMenu.menuItems.rename.disabled = !driver.value.enableFileOperator;
+        tableMenu.menuItems.delete.disabled = !driver.value.enableFileOperator;
     }
 
     const selectedRowKeys = tableRowSelection.selectedRowKeys;
 
     if (selectedRowKeys && selectedRowKeys.length !== 0) {
         //有勾选项时
-        tableMenu.menus[0].hidden = true;
-        tableMenu.menus[1].hidden = true;
-        tableMenu.menus[2].hidden = false;
+        tableMenu.menuItems.preview.hidden = true;
+        tableMenu.menuItems.open.hidden = true;
+        tableMenu.menuItems.download.hidden = true;
+        tableMenu.menuItems.directLink.hidden = false;
         for (const index of selectedRowKeys) {
             if (typeof index === "number") {
                 const file = fileList.value[index];
                 if (file.type === "D") {
-                    tableMenu.menus[2].hidden = true;
+                    tableMenu.menuItems.directLink.hidden = true;
                     break;
                 }
             }
         }
-        tableMenu.menus[4].hidden = true;
-        tableMenu.menus[5].hidden = !adminStatus.value;
-        setMenus3HiddenValue();
+        tableMenu.menuItems.rename.hidden = true;
+        tableMenu.menuItems.delete.hidden = !adminStatus.value;
 
-        tableMenu.menus[5].label = `删除(${tableRowSelection.selectedRowKeys?.length})`;
+        tableMenu.menuItems.delete.label = `删除(${tableRowSelection.selectedRowKeys?.length})`;
 
-        if (!tableMenu.menus[2].hidden) {
-            tableMenu.onClicks.generateLink = async () => {
+        if (!tableMenu.menuItems.directLink.hidden) {
+            tableMenu.menuItems.directLink.onClick = async () => {
                 if (props.driverKey) {
                     const fileNames: Array<string> = [];
                     const paths: Array<string> = [];
@@ -478,7 +472,7 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
             }
         }
 
-        tableMenu.onClicks.delete = () => {
+        tableMenu.menuItems.delete.onClick = () => {
             Modal.warning({
                 title: "警告",
                 titleAlign: "center",
@@ -503,31 +497,28 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
 
     } else {
         //没有勾选项时
-        tableMenu.menus[0].hidden = record.type !== "D";
-        tableMenu.menus[1].hidden = record.type !== "F";
-        tableMenu.menus[2].hidden = record.type !== "F";
-        tableMenu.menus[4].hidden = !adminStatus.value;
-        tableMenu.menus[5].hidden = !adminStatus.value;
-        setMenus3HiddenValue();
-
-        tableMenu.menus[5].label = "删除";
+        tableMenu.menuItems.preview.hidden = record.type !== "F" || record.suffixType === "normal";
+        tableMenu.menuItems.open.hidden = record.type !== "D";
+        tableMenu.menuItems.download.hidden = record.type !== "F";
+        tableMenu.menuItems.directLink.hidden = record.type !== "F";
+        tableMenu.menuItems.rename.hidden = !adminStatus.value;
+        tableMenu.menuItems.delete.hidden = !adminStatus.value;
+        tableMenu.menuItems.delete.label = "删除";
 
         const file = fileList.value[record.index];
 
         if (record.type === "D") {
-            tableMenu.onClicks.open = () => {
+            tableMenu.menuItems.open.onClick = () => {
                 if (props.driverKey) {
                     router.push(`/${props.driverKey}${file.path}`);
                 }
             }
-        }
-
-        if (record.type === "F") {
-            tableMenu.onClicks.download = () => {
+        } else if (record.type === "F") {
+            tableMenu.menuItems.download.onClick = () => {
                 download(file);
             }
 
-            tableMenu.onClicks.generateLink = async () => {
+            tableMenu.menuItems.directLink.onClick = async () => {
                 if (props.driverKey) {
                     const resp = await http.directLink.generate([file.path], props.driverKey);
                     if (resp.code === 0) {
@@ -540,15 +531,30 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                     }
                 }
             }
+
+            if (record.suffixType !== "normal") {
+                tableMenu.menuItems.preview.onClick = () => {
+                    switch (record.suffixType) {
+                        case "video": {
+                            previewVideo(file);
+                            break;
+                        }
+                        case "image": {
+                            previewImages(file);
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
-        tableMenu.onClicks.rename = () => {
+        tableMenu.menuItems.rename.onClick = () => {
             renameModal.visible = true;
             renameModal.form.name = file.name;
             renameModal.form.file = file;
         }
 
-        tableMenu.onClicks.delete = () => {
+        tableMenu.menuItems.delete.onClick = () => {
             Modal.warning({
                 title: "警告",
                 titleAlign: "center",

@@ -93,7 +93,7 @@ function item_click(event: MouseEvent) {
     color: var(--color-text-disabled);
     text-decoration: inherit;
     background-color: inherit;
-    cursor: inherit;
+    cursor: not-allowed;
 }
 
 .dsx-menu-item-icon {

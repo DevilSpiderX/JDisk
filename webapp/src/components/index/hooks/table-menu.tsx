@@ -1,5 +1,6 @@
 import { MenuItemOptionType } from "@/components/dsx-menu";
-import { reactive, toRef, computed, ref, ComputedRef, Ref } from "vue";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 
 const tableMenuStyle = {
     "--color-bg": "var(--color-bg-3)",
@@ -12,42 +13,95 @@ const tableMenuItemStyle = {
 }
 
 export function useTableMenu() {
-    const menus = reactive<Array<MenuItemOptionType>>([
-        { label: "打开", onClick: () => { }, style: tableMenuItemStyle, icon: (<i class="fa-solid fa-folder-open"></i>) },
-        { label: "下载", onClick: () => { }, style: tableMenuItemStyle, icon: (<i class="fa-solid fa-download"></i>) },
-        { label: "生成直链", onClick: () => { }, style: tableMenuItemStyle, icon: (<i class="fa-solid fa-link"></i>) },
-        { divider: true },
-        { label: "重命名", onClick: () => { }, style: tableMenuItemStyle, icon: (<i class="fa-solid fa-pen-to-square"></i>) },
-        { label: "删除", onClick: () => { }, style: tableMenuItemStyle, icon: (<i class="fa-solid fa-trash"></i>) }
-    ]);
+    const visible = ref(false);
+    const event = ref<MouseEvent | { x: number, y: number }>();
 
-    const tableMenu = reactive<{
-        visible: boolean,
-        event?: MouseEvent | { x: number, y: number },
-        menus: typeof menus,
-        onClicks: {
-            open: any,
-            download: any,
-            generateLink: any,
-            rename: any,
-            delete: any
-        },
-        style: typeof tableMenuStyle
+    const router = useRouter();
+
+    const menuItems = ref<{
+        preview: MenuItemOptionType,
+        open: MenuItemOptionType,
+        download: MenuItemOptionType,
+        directLink: MenuItemOptionType,
+        rename: MenuItemOptionType,
+        delete: MenuItemOptionType,
+        refresh: MenuItemOptionType,
     }>({
-        visible: false,
-        event: undefined,
-        menus,
-        onClicks: {
-            open: toRef(menus[0], "onClick"),
-            download: toRef(menus[1], "onClick"),
-            generateLink: toRef(menus[2], "onClick"),
-            rename: toRef(menus[4], "onClick"),
-            delete: toRef(menus[5], "onClick")
+        preview: {
+            label: "预览",
+            onClick: () => { },
+            style: tableMenuItemStyle,
+            icon: (<i class="fa-solid fa-eye"></i>)
         },
-        style: tableMenuStyle
+        open: {
+            label: "打开",
+            onClick: () => { },
+            style: tableMenuItemStyle,
+            icon: (<i class="fa-solid fa-folder-open"></i>)
+        },
+        download: {
+            label: "下载",
+            onClick: () => { },
+            style: tableMenuItemStyle,
+            icon: (<i class="fa-solid fa-download"></i>)
+        },
+        directLink: {
+            label: "生成直链",
+            onClick: () => { },
+            style: tableMenuItemStyle,
+            icon: (<i class="fa-solid fa-link"></i>)
+        },
+        rename: {
+            label: "重命名",
+            onClick: () => { },
+            style: tableMenuItemStyle,
+            icon: (<i class="fa-solid fa-pen-to-square"></i>)
+        },
+        delete: {
+            label: "删除",
+            onClick: () => { },
+            style: tableMenuItemStyle,
+            icon: (<i class="fa-solid fa-trash"></i>)
+        },
+        refresh: {
+            label: "刷新",
+            onClick: () => {
+                router.go(0);
+            },
+            style: tableMenuItemStyle,
+            icon: (<i class="fa-solid fa-arrows-rotate"></i>)
+        },
     });
 
+    //@ts-ignore
+    const menus = ref([
+        menuItems.value.preview,
+        menuItems.value.open,
+        menuItems.value.download,
+        menuItems.value.directLink,
+        {
+            divider: true,
+            hidden: computed(() => (menuItems.value.preview.hidden && menuItems.value.open.hidden &&
+                menuItems.value.download.hidden && menuItems.value.directLink.hidden) ||
+                (menuItems.value.rename.hidden && menuItems.value.delete.hidden))
+        },
+        menuItems.value.rename,
+        menuItems.value.delete,
+        {
+            divider: true,
+            hidden: computed(() => (menuItems.value.preview.hidden && menuItems.value.open.hidden &&
+                menuItems.value.download.hidden && menuItems.value.directLink.hidden &&
+                menuItems.value.rename.hidden && menuItems.value.delete.hidden) ||
+                menuItems.value.refresh.hidden)
+        },
+        menuItems.value.refresh,
+    ]);
+
     return {
-        tableMenu
+        visible,
+        event,
+        style: tableMenuStyle,
+        menuItems,
+        menus,
     }
 }

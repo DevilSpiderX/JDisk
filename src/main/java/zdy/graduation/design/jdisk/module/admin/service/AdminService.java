@@ -19,6 +19,6 @@ public class AdminService {
         SystemConfig passwordSC = suid.selectOne(new SystemConfig("password"));
 
         return Objects.equals(username, usernameSC.getValue()) &&
-                Objects.equals(password, passwordSC.getValue());
+               Objects.equals(password, passwordSC.getValue());
     }
 }

@@ -66,7 +66,7 @@ const width = computed(() => {
                 {{ title }}
             </div>
         </template>
-        <Vue3VideoPlay width="100%" :src="videoSrc" :volume="1" ref="playerRef" />
+        <Vue3VideoPlay width="100%" :src="videoSrc" :volume="1" ref="playerRef" preload="meta" />
     </AModal>
 </template>
 
