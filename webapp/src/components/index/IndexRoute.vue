@@ -1,6 +1,8 @@
 <script setup lang="tsx">
 import { DSXMenu } from "@/components/dsx-menu";
-import { http } from "@/scripts/http";
+import { FileTypes, getFiletype } from "@/scripts/file-type";
+import { http, httpInstance } from "@/scripts/http";
+import { getFileSuffixType, SuffixTypes } from "@/scripts/suffix-type";
 import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useDriverList, ValueType as DriverType } from "@/store/DriverList";
 import { useSystemConfigs } from "@/store/SystemConfigs";
@@ -23,7 +25,9 @@ import {
 import { computed, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import MyTr from "./components/MyTr.vue";
+import TextMonitor from "./components/TextMonitor.vue";
 import VideoPreviewModal from "./components/VideoPreviewModal.vue";
+import { useModalWidth } from "./hooks/modal-width";
 import { useTableBodyScrollWrap } from "./hooks/table-body-scroll-wrap";
 import { useTableMenu } from "./hooks/table-menu";
 
@@ -44,7 +48,7 @@ onMounted(async () => {
 
 const props = defineProps<{
     driverKey?: string,
-    paths?: Array<string>
+    paths?: Array<string>;
 }>();
 
 watchEffect(async () => {
@@ -69,7 +73,7 @@ watchEffect(async () => {
             }
         }
     }
-})
+});
 
 const driver = computed<DriverType | null>(() => {
     if (props.driverKey) {
@@ -105,7 +109,7 @@ interface MyFile {
     parent: string,
     path: string,
     size?: number,
-    type: "F" | "D"
+    type: "F" | "D";
 }
 
 const fileList = ref<Array<MyFile>>([]);
@@ -120,12 +124,13 @@ async function updateFileList(driverKey: string, directoryPath: string) {
     const resp = await http.file.list(driverKey, directoryPath);
     if (resp.code === 0) {
         fileList.value = resp.data;
+        console.log("更新文件列表：", resp);
     }
     tableLoading.value = false;
 }
 
-const breadcrumbRoutes = computed<Array<{ path: string, label: string }>>(() => {
-    const result: Array<{ path: string, label: string }> = [];
+const breadcrumbRoutes = computed<Array<{ path: string, label: string; }>>(() => {
+    const result: Array<{ path: string, label: string; }> = [];
     result.push({ path: "/", label: "首页" });
     let p = "";
     if (driver.value) {
@@ -152,8 +157,8 @@ interface MyTableData extends ATableData {
     name: string,
     modified: string,
     size: string,
-    type: "F" | "D" | "driver" | "back",
-    suffixType?: "video" | "image" | "audio" | "text" | "normal"
+    type: FileTypes,
+    suffixType?: SuffixTypes;
 }
 
 const tableData = computed<Array<MyTableData>>(() => {
@@ -172,13 +177,13 @@ const tableData = computed<Array<MyTableData>>(() => {
             name,
             modified: "-",
             size: "-",
-            type: "back",
+            type: FileTypes.back,
             disabled: true
         });
         for (let index = 0; index < fileList.value.length; index++) {
             const file = fileList.value[index];
 
-            let suffixType: "video" | "image" | "audio" | "text" | "normal" | undefined = undefined;
+            let suffixType: SuffixTypes | undefined = undefined;
             if (file.type === "F") {
                 suffixType = getFileSuffixType(getSuffix(file.name));
             }
@@ -190,7 +195,7 @@ const tableData = computed<Array<MyTableData>>(() => {
                 name: file.name,
                 modified: file.modified,
                 size,
-                type: file.type,
+                type: getFiletype(file.type),
                 suffixType
             });
         }
@@ -208,7 +213,7 @@ const tableData = computed<Array<MyTableData>>(() => {
                     name: driver.name,
                     modified: "-",
                     size: "-",
-                    type: "driver",
+                    type: FileTypes.driver,
                     disabled: true
                 });
             }
@@ -219,31 +224,23 @@ const tableData = computed<Array<MyTableData>>(() => {
     return list;
 });
 
-function getFileSuffixType(suffix: string) {
-    if (systemConfigs.values.customVideoSuffix.indexOf(suffix) !== -1) {
-        return "video";
-    } else if (systemConfigs.values.customImageSuffix.indexOf(suffix) !== -1) {
-        return "image";
-    } else if (systemConfigs.values.customAudioSuffix.indexOf(suffix) !== -1) {
-        return "audio";
-    } else if (systemConfigs.values.customTextSuffix.indexOf(suffix) !== -1) {
-        return "text";
-    } else {
-        return "normal";
-    }
-}
-
-function getNumByType(a: MyTableData) {
-    if (a.type === "back") {
-        return 0;
-    } else if (a.type === "driver") {
-        return 1;
-    } else if (a.type === "D") {
-        return 2;
-    } else if (a.type === "F") {
-        return 3;
-    } else {
-        return 4;
+function getNumByType(one: MyTableData) {
+    switch (one.type) {
+        case FileTypes.back: {
+            return 0;
+        }
+        case FileTypes.driver: {
+            return 1;
+        }
+        case FileTypes.directory: {
+            return 2;
+        }
+        case FileTypes.file: {
+            return 3;
+        }
+        default: {
+            return 4;
+        }
     }
 }
 
@@ -258,19 +255,19 @@ const tableColumns = computed(() => {
         return [
             { title: "文件名", dataIndex: "name", slotName: "fileName" },
             { title: "大小", dataIndex: "size" }
-        ]
+        ];
     }
 });
 
 // 单击文件
 function on_table_row_click(record: ATableData) {
     switch (record.type) {
-        case "D": {
+        case FileTypes.directory: {
             const dir = fileList.value[record.index];
             router.push(`/${props.driverKey}${dir.path}`);
             break;
         }
-        case "back": {
+        case FileTypes.back: {
             if (!lastDirectoryPath.value) {
                 router.push("/");
             } else if (lastDirectoryPath.value === "/") {
@@ -280,16 +277,20 @@ function on_table_row_click(record: ATableData) {
             }
             break;
         }
-        case "F": {
+        case FileTypes.file: {
             const file = fileList.value[record.index];
             console.log(file);
             switch (record.suffixType) {
-                case "video": {
+                case SuffixTypes.video: {
                     previewVideo(file);
                     break;
                 }
-                case "image": {
+                case SuffixTypes.image: {
                     previewImages(file);
+                    break;
+                }
+                case SuffixTypes.text: {
+                    previewText(file);
                     break;
                 }
                 default: {
@@ -308,10 +309,10 @@ function on_table_row_click(record: ATableData) {
             }
             break;
         }
-        case "driver": {
+        case FileTypes.driver: {
             const driver = driverList.value[record.index];
             router.push("/" + driver.key);
-            break;
+            break; 0;
         }
     }
 }
@@ -339,7 +340,7 @@ async function previewImages(currentImage: MyFile) {
 
     const imageList: Array<MyFile> = [];
     for (const data of tableData.value) {
-        if (data.suffixType === "image") {
+        if (data.suffixType === SuffixTypes.image) {
             imageList.push(fileList.value[data.index]);
         }
     }
@@ -380,6 +381,28 @@ async function previewVideo(currentVideo: MyFile) {
             videoPreview.title = currentVideo.name;
             videoPreview.src = videoURL;
             videoPreview.visible = true;
+        }
+    }
+}
+
+// 预览文本文件
+async function previewText(currentVideo: MyFile) {
+    if (driver.value) {
+        const textPath = currentVideo.path;
+        const resp = await http.signature.apply(textPath, driver.value.key);
+        if (resp.code === 0) {
+            const sign = resp.data;
+            const driverKey = encodeURI(driver.value.key);
+            const textURL = `${location.origin}/dl/${driverKey}${textPath}`
+                + (sign === "" ? "" : `?signature=${sign}`);
+            textModal.title = currentVideo.name;
+            textModal.visible = true;
+            textModal.loading = true;
+            {
+                const resp = await httpInstance.get(textURL);
+                textModal.text = resp.data;
+            }
+            textModal.loading = false;
         }
     }
 }
@@ -469,7 +492,7 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                         directLinkModal.visible = true;
                     }
                 }
-            }
+            };
         }
 
         tableMenu.menuItems.delete.onClick = () => {
@@ -493,30 +516,30 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                     tableLoading.value = false;
                 }
             });
-        }
+        };
 
     } else {
         //没有勾选项时
-        tableMenu.menuItems.preview.hidden = record.type !== "F" || record.suffixType === "normal";
-        tableMenu.menuItems.open.hidden = record.type !== "D";
-        tableMenu.menuItems.download.hidden = record.type !== "F";
-        tableMenu.menuItems.directLink.hidden = record.type !== "F";
+        tableMenu.menuItems.preview.hidden = record.type !== FileTypes.file || record.suffixType === SuffixTypes.normal;
+        tableMenu.menuItems.open.hidden = record.type !== FileTypes.directory;
+        tableMenu.menuItems.download.hidden = record.type !== FileTypes.file;
+        tableMenu.menuItems.directLink.hidden = record.type !== FileTypes.file;
         tableMenu.menuItems.rename.hidden = !adminStatus.value;
         tableMenu.menuItems.delete.hidden = !adminStatus.value;
         tableMenu.menuItems.delete.label = "删除";
 
         const file = fileList.value[record.index];
 
-        if (record.type === "D") {
+        if (record.type === FileTypes.directory) {
             tableMenu.menuItems.open.onClick = () => {
                 if (props.driverKey) {
                     router.push(`/${props.driverKey}${file.path}`);
                 }
-            }
-        } else if (record.type === "F") {
+            };
+        } else if (record.type === FileTypes.file) {
             tableMenu.menuItems.download.onClick = () => {
                 download(file);
-            }
+            };
 
             tableMenu.menuItems.directLink.onClick = async () => {
                 if (props.driverKey) {
@@ -530,21 +553,21 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                         directLinkModal.visible = true;
                     }
                 }
-            }
+            };
 
-            if (record.suffixType !== "normal") {
+            if (record.suffixType !== SuffixTypes.normal) {
                 tableMenu.menuItems.preview.onClick = () => {
                     switch (record.suffixType) {
-                        case "video": {
+                        case SuffixTypes.video: {
                             previewVideo(file);
                             break;
                         }
-                        case "image": {
+                        case SuffixTypes.image: {
                             previewImages(file);
                             break;
                         }
                     }
-                }
+                };
             }
         }
 
@@ -552,7 +575,7 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
             renameModal.visible = true;
             renameModal.form.name = file.name;
             renameModal.form.file = file;
-        }
+        };
 
         tableMenu.menuItems.delete.onClick = () => {
             Modal.warning({
@@ -570,7 +593,7 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                     tableLoading.value = false;
                 }
             });
-        }
+        };
 
     }
 
@@ -629,8 +652,8 @@ const directLinkModal = reactive<{
     visible: boolean,
     table: {
         columns: Array<ATableColumnData>,
-        data: Array<ATableData>
-    }
+        data: Array<ATableData>;
+    };
 }>({
     visible: false,
     table: {
@@ -658,8 +681,8 @@ const renameModal = reactive<{
     visible: boolean,
     form: {
         name: string,
-        file: MyFile | null
-    }
+        file: MyFile | null;
+    };
 }>({
     visible: false,
     form: {
@@ -669,7 +692,6 @@ const renameModal = reactive<{
 });
 
 async function on_renamerModal_ok() {
-    console.log(renameModal);
     if (renameModal.form.file && props.driverKey) {
         tableLoading.value = true;
         const resp = await http.file.operate.update(
@@ -692,7 +714,7 @@ const uploadMoadl = reactive<{
     visible: boolean,
     fileList: Array<AFileItem>,
     onClose: () => void,
-    customIcon: ACustomIcon
+    customIcon: ACustomIcon;
 }>({
     visible: false,
     fileList: [],
@@ -702,14 +724,14 @@ const uploadMoadl = reactive<{
     customIcon: {
         fileIcon: (fileItem: AFileItem) => {
             const suffixType = fileItem.name ? getFileSuffixType(getSuffix(fileItem.name)) : undefined;
-            return <img src={getSvgByTypeAndSuffix("F", suffixType)} width="16" height="16" />
+            return <img src={getSvgByTypeAndSuffix(FileTypes.file, suffixType)} width="16" height="16" />;
         }
     }
 });
 
 function uploadModalCustomRequest(option: ARequestOption) {
     const { onProgress, onError, onSuccess, fileItem } = option;
-    const abortController = new AbortController()
+    const abortController = new AbortController();
 
     if (props.driverKey && fileItem.file) {
         http.file.operate.upload(
@@ -738,7 +760,7 @@ function uploadModalCustomRequest(option: ARequestOption) {
         abort() {
             abortController.abort();
         }
-    }
+    };
 }
 
 const uploadingList = ref<Array<AFileItem>>([]);
@@ -765,7 +787,7 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
         const index = uploadingList.value.indexOf(item);
         uploadingList.value.splice(index, 1);
 
-        const wItem = waitingList.value.shift()
+        const wItem = waitingList.value.shift();
         if (wItem) {
             uploadFileItem(wItem);
         }
@@ -773,7 +795,7 @@ function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
 }
 
 // 图片预览组件
-const imagePreview = reactive<{ visible: boolean, current: number, srcList: Array<string> }>({
+const imagePreview = reactive<{ visible: boolean, current: number, srcList: Array<string>; }>({
     visible: false,
     current: 0,
     srcList: []
@@ -786,6 +808,23 @@ const videoPreview = reactive({
     onClose: () => {
         videoPreview.src = "";
     }
+});
+
+const textModal = reactive({
+    title: "",
+    visible: false,
+    text: "",
+    loading: false,
+    width: useModalWidth().width,
+    bodyStyle: {
+        height: "450px",
+        padding: "0",
+        overflow: "hidden"
+    },
+    onClose: () => {
+        textModal.title = "";
+        textModal.text = "";
+    },
 });
 
 </script>
@@ -1007,6 +1046,11 @@ const videoPreview = reactive({
     <!-- 视频预览组件 -->
     <VideoPreviewModal :title="videoPreview.title" v-model:visible="videoPreview.visible" :videoSrc="videoPreview.src"
         @close="videoPreview.onClose" />
+
+    <AModal :title="textModal.title" v-model:visible="textModal.visible" :width="textModal.width" :footer="false" draggable
+        :body-style="textModal.bodyStyle" @close="textModal.onClose">
+        <TextMonitor :text="textModal.text" :loading="textModal.loading" />
+    </AModal>
 </template>
 
 <style scoped>

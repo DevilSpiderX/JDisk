@@ -3,6 +3,7 @@ import { useAppConfigs } from "@/store/AppConfigsStore";
 import { computed, ref } from "vue";
 import Vue3VideoPlay from "vue3-video-play";
 import "vue3-video-play/dist/style.css";
+import { useModalWidth } from "../hooks/modal-width";
 
 const appConfigs = useAppConfigs();
 
@@ -36,25 +37,7 @@ function on_close() {
     emit("close");
 }
 
-const width = computed(() => {
-    const winWidth = appConfigs.client.width;
-    if (winWidth < 576) {
-        //xs [0, 576)
-        return "90%";
-    } else if (winWidth < 768) {
-        //sm [576, 768)
-        return "80%";
-    } else if (winWidth < 992) {
-        //md [768, 992)
-        return "75%";
-    } else if (winWidth < 1200) {
-        //lg [992, 1200)
-        return "70%";
-    } else {
-        //xl & xxl [1200, ∞)
-        return "800px";
-    }
-});
+const { width } = useModalWidth();
 
 </script>
 

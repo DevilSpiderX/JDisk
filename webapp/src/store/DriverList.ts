@@ -1,6 +1,6 @@
+import { http } from "@/scripts/http";
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { http } from "@/scripts/http";
 
 export interface ValueType {
     id: number,
@@ -21,6 +21,7 @@ export const useDriverList = defineStore("driverList", () => {
         const resp = await http.driver.list();
         if (resp.code === 0) {
             value.value = resp.data;
+            console.log("更新驱动器列表:", resp);
         }
     }
 

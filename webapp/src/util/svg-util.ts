@@ -6,26 +6,27 @@ import ImageSvg from "@/assets/file-type-image.svg";
 import RootSvg from "@/assets/file-type-root.svg";
 import TextSvg from "@/assets/file-type-text.svg";
 import VideoSvg from "@/assets/file-type-video.svg";
+import { FileTypes } from "@/scripts/file-type";
+import { SuffixTypes } from "@/scripts/suffix-type";
 
-export function getSvgByTypeAndSuffix(type: "F" | "D" | "driver" | "back",
-    suffixType?: "video" | "image" | "audio" | "text" | "normal") {
-    if (type === "F") {
-        if (suffixType === "video") {
+export function getSvgByTypeAndSuffix(type: FileTypes, suffixType?: SuffixTypes) {
+    if (type === FileTypes.file) {
+        if (suffixType === SuffixTypes.video) {
             return VideoSvg;
-        } else if (suffixType === "image") {
+        } else if (suffixType === SuffixTypes.image) {
             return ImageSvg;
-        } else if (suffixType === "audio") {
+        } else if (suffixType === SuffixTypes.audio) {
             return AudioSvg;
-        } else if (suffixType === "text") {
+        } else if (suffixType === SuffixTypes.text) {
             return TextSvg;
         } else {
             return FileSvg;
         }
-    } else if (type === "D") {
+    } else if (type === FileTypes.directory) {
         return FolderSvg;
-    } else if (type === "back") {
+    } else if (type === FileTypes.back) {
         return BackSvg;
-    } else if (type === "driver") {
+    } else if (type === FileTypes.driver) {
         return RootSvg;
     } else {
         return FileSvg;
