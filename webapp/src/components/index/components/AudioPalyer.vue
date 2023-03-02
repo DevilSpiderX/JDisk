@@ -21,6 +21,8 @@ const emit = defineEmits<{
     (e: 'update:duration', duration: number): void,
 }>();
 
+const loading = ref(false);
+
 const audioRef = ref<HTMLAudioElement | null>(null);
 
 function play() {
@@ -79,6 +81,7 @@ const paused = ref(true);
 
 watchEffect(async () => {
     if (props.src && props.src !== "" && audioRef.value) {
+        loading.value = true;
         _currentTime.value = 0;
         if (props.autoplay) {
             play();
@@ -192,59 +195,63 @@ function on_audio_player_keydown(ev: KeyboardEvent) {
     }
 }
 
+const print = console.log
+
 </script>
 
 <template>
-    <div class="audio-outer" tabindex="-1" @keydown="on_audio_player_keydown">
-        <audio ref="audioRef" :src="src" :currentTime="_currentTime" :autoplay="autoplay" :muted="muted" :volume="volume"
-            @timeupdate="on_time_update" @durationchange="on_duration_change" @play="paused = false"
-            @pause="paused = true" />
-        <AGrid class="audio-wrapper" :cols="8" :row-gap="10" :col-gap="12">
-            <AGridItem class="grid-item" :span="8">{{ name }}</AGridItem>
+    <ASpin :loading="loading">
+        <div class="audio-outer" tabindex="-1" @keydown="on_audio_player_keydown">
+            <audio ref="audioRef" :src="src" :currentTime="_currentTime" :autoplay="autoplay" :muted="muted"
+                :volume="volume" @timeupdate="on_time_update" @durationchange="on_duration_change" @play="paused = false"
+                @pause="paused = true" @loadedmetadata="loading = false" />
+            <AGrid class="audio-wrapper" :cols="8" :row-gap="10" :col-gap="12">
+                <AGridItem class="grid-item" :span="8">{{ name }}</AGridItem>
 
-            <AGridItem class="grid-item item-center " :span="2">
-                <AButton shape="circle" @click="on_playbutton_click">
-                    <template #icon>
-                        <i v-if="paused" class="fa-solid fa-play"></i>
-                        <i v-else class="fa-solid fa-pause"></i>
-                    </template>
-                </AButton>
-            </AGridItem>
-
-            <AGridItem class="grid-item item-center  time-display" :span="4">
-                {{ secToTime(_currentTime) }} / {{ secToTime(_duration) }}
-            </AGridItem>
-
-            <AGridItem class="grid-item item-center " :span="2">
-                <ATrigger position="top" auto-fit-position v-model:popupVisible="volumeBarVisible">
-                    <AButton shape="circle" @click="on_muteButton_click">
+                <AGridItem class="grid-item item-center " :span="2">
+                    <AButton shape="circle" @click="on_playbutton_click">
                         <template #icon>
-                            <!-- 静音标记 -->
-                            <i v-if="muted" class="fa-solid fa-volume-slash"></i>
-                            <!-- 音量为0 -->
-                            <i v-else-if="volume === 0" class="fa-solid fa-volume-off"></i>
-                            <!-- 音量低 -->
-                            <i v-else-if="volume <= 0.4" class="fa-solid fa-volume-low"></i>
-                            <!-- 音量中 -->
-                            <i v-else-if="volume <= 0.8" class="fa-solid fa-volume"></i>
-                            <!-- 音量高 -->
-                            <i v-else class="fa-solid fa-volume-high"></i>
+                            <i v-if="paused" class="fa-solid fa-play"></i>
+                            <i v-else class="fa-solid fa-pause"></i>
                         </template>
                     </AButton>
-                    <template #content>
-                        <div class="volume-wrapper" @wheel.stop.prevent="on_volume_wrapper_wheel">
-                            <ASlider class="volume-slider" v-model="volumeProgress" direction="vertical"
-                                @change="on_volume_slider_change" />
-                        </div>
-                    </template>
-                </ATrigger>
-            </AGridItem>
+                </AGridItem>
 
-            <AGridItem class="grid-item item-center" :span="8">
-                <ASlider v-model="playProgress" :max="_duration" :format-tooltip="playProgressFormatter" />
-            </AGridItem>
-        </AGrid>
-    </div>
+                <AGridItem class="grid-item item-center  time-display" :span="4">
+                    {{ secToTime(_currentTime) }} / {{ secToTime(_duration) }}
+                </AGridItem>
+
+                <AGridItem class="grid-item item-center " :span="2">
+                    <ATrigger position="top" auto-fit-position v-model:popupVisible="volumeBarVisible">
+                        <AButton shape="circle" @click="on_muteButton_click">
+                            <template #icon>
+                                <!-- 静音标记 -->
+                                <i v-if="muted" class="fa-solid fa-volume-slash"></i>
+                                <!-- 音量为0 -->
+                                <i v-else-if="volume === 0" class="fa-solid fa-volume-off"></i>
+                                <!-- 音量低 -->
+                                <i v-else-if="volume <= 0.4" class="fa-solid fa-volume-low"></i>
+                                <!-- 音量中 -->
+                                <i v-else-if="volume <= 0.8" class="fa-solid fa-volume"></i>
+                                <!-- 音量高 -->
+                                <i v-else class="fa-solid fa-volume-high"></i>
+                            </template>
+                        </AButton>
+                        <template #content>
+                            <div class="volume-wrapper" @wheel.stop.prevent="on_volume_wrapper_wheel">
+                                <ASlider class="volume-slider" v-model="volumeProgress" direction="vertical"
+                                    @change="on_volume_slider_change" />
+                            </div>
+                        </template>
+                    </ATrigger>
+                </AGridItem>
+
+                <AGridItem class="grid-item item-center" :span="8">
+                    <ASlider v-model="playProgress" :max="_duration" :format-tooltip="playProgressFormatter" />
+                </AGridItem>
+            </AGrid>
+        </div>
+    </ASpin>
 </template>
 
 <style scoped>
