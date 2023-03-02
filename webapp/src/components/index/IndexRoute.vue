@@ -399,7 +399,7 @@ async function previewText(currentVideo: MyFile) {
             textModal.visible = true;
             textModal.loading = true;
             {
-                const resp = await httpInstance.get(textURL);
+                const resp = await httpInstance.get(textURL, { transformResponse: data => data });
                 textModal.text = resp.data;
             }
             textModal.loading = false;
@@ -815,17 +815,23 @@ const textModal = reactive({
     visible: false,
     text: "",
     loading: false,
-    width: useModalWidth().width,
-    bodyStyle: {
-        height: "450px",
-        padding: "0",
-        overflow: "hidden"
-    },
+    fullscreen: false,
     onClose: () => {
         textModal.title = "";
         textModal.text = "";
+        textModal.fullscreen = false;
     },
 });
+
+const computedWidth = useModalWidth();
+
+const textModalWidth = computed(() => textModal.fullscreen ? "100%" : computedWidth.width.value);
+
+const textModalBodyStyle = computed(() => ({
+    height: textModal.fullscreen ? undefined : "450px",
+    padding: "0",
+    overflow: "hidden"
+}));
 
 </script>
 
@@ -1047,9 +1053,16 @@ const textModal = reactive({
     <VideoPreviewModal :title="videoPreview.title" v-model:visible="videoPreview.visible" :videoSrc="videoPreview.src"
         @close="videoPreview.onClose" />
 
-    <AModal :title="textModal.title" v-model:visible="textModal.visible" :width="textModal.width" :footer="false" draggable
-        :body-style="textModal.bodyStyle" @close="textModal.onClose">
+    <AModal v-model:visible="textModal.visible" :width="textModalWidth" :footer="false" draggable
+        :fullscreen="textModal.fullscreen" :body-style="textModalBodyStyle" @close="textModal.onClose">
         <TextMonitor :text="textModal.text" :loading="textModal.loading" />
+        <template #title>
+            <div class="text-title">{{ textModal.title }}</div>
+            <span class="full-screen-button arco-icon-hover" @click="textModal.fullscreen = !textModal.fullscreen">
+                <i v-if="textModal.fullscreen" class="fa-solid fa-compress arco-icon"></i>
+                <i v-else class="fa-solid fa-expand arco-icon"></i>
+            </span>
+        </template>
     </AModal>
 </template>
 
@@ -1064,5 +1077,20 @@ const textModal = reactive({
 
 .upload-item {
     display: flex;
+}
+
+.text-title {
+    max-width: 270px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.full-screen-button {
+    cursor: pointer;
+    color: var(--color-text-1);
+    font-size: 12px;
+    position: absolute;
+    right: 50px;
 }
 </style>
