@@ -10,6 +10,7 @@ export {}
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     AdminRoute: typeof import('./src/components/admin/AdminRoute.vue')['default']
+    AudioPalyer: typeof import('./src/components/index/components/AudioPalyer.vue')['default']
     DirectLink: typeof import('./src/components/admin/components/direct-link/DirectLink.vue')['default']
     Display: typeof import('./src/components/admin/components/display/Display.vue')['default']
     DriverEdit: typeof import('./src/components/admin/components/driver/DriverEdit.vue')['default']

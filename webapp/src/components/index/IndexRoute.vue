@@ -24,6 +24,7 @@ import {
 } from "@arco-design/web-vue";
 import { computed, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
+import AudioPalyer from "./components/AudioPalyer.vue";
 import MyTr from "./components/MyTr.vue";
 import TextMonitor from "./components/TextMonitor.vue";
 import VideoPreviewModal from "./components/VideoPreviewModal.vue";
@@ -126,6 +127,7 @@ async function updateFileList(driverKey: string, directoryPath: string) {
         fileList.value = resp.data;
         console.log("更新文件列表：", resp);
     }
+    tableRowSelection.selectedRowKeys = [];
     tableLoading.value = false;
 }
 
@@ -293,6 +295,10 @@ function on_table_row_click(record: ATableData) {
                     previewText(file);
                     break;
                 }
+                case SuffixTypes.audio: {
+                    previewAudio(file);
+                    break;
+                }
                 default: {
                     Modal.info({
                         title: "下载",
@@ -395,14 +401,32 @@ async function previewText(currentVideo: MyFile) {
             const driverKey = encodeURI(driver.value.key);
             const textURL = `${location.origin}/dl/${driverKey}${textPath}`
                 + (sign === "" ? "" : `?signature=${sign}`);
-            textModal.title = currentVideo.name;
-            textModal.visible = true;
-            textModal.loading = true;
+            textPreview.title = currentVideo.name;
+            textPreview.visible = true;
+            textPreview.loading = true;
             {
                 const resp = await httpInstance.get(textURL, { transformResponse: data => data });
-                textModal.text = resp.data;
+                textPreview.text = resp.data;
             }
-            textModal.loading = false;
+            textPreview.loading = false;
+        }
+    }
+}
+
+// 预览音频文件
+async function previewAudio(currentVideo: MyFile) {
+    if (driver.value) {
+        const audioPath = currentVideo.path;
+        const resp = await http.signature.apply(audioPath, driver.value.key);
+        if (resp.code === 0) {
+            const sign = resp.data;
+            const driverKey = encodeURI(driver.value.key);
+            const encodeAudioPath = encodeURI(audioPath);
+            const audioURL = `${location.origin}/dl/${driverKey}${encodeAudioPath}`
+                + (sign === "" ? "" : `?signature=${sign}`);
+            audioPreview.title = currentVideo.name;
+            audioPreview.srcStr = audioURL;
+            audioPreview.visible = true;
         }
     }
 }
@@ -566,6 +590,14 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                             previewImages(file);
                             break;
                         }
+                        case SuffixTypes.text: {
+                            previewText(file);
+                            break;
+                        }
+                        case SuffixTypes.audio: {
+                            previewAudio(file);
+                            break;
+                        }
                     }
                 };
             }
@@ -719,7 +751,9 @@ const uploadMoadl = reactive<{
     visible: false,
     fileList: [],
     onClose: () => {
-        location.reload();
+        if (props.driverKey) {
+            updateFileList(props.driverKey, directoryPath.value);
+        }
     },
     customIcon: {
         fileIcon: (fileItem: AFileItem) => {
@@ -801,6 +835,7 @@ const imagePreview = reactive<{ visible: boolean, current: number, srcList: Arra
     srcList: []
 });
 
+// 视频预览组件
 const videoPreview = reactive({
     title: "",
     visible: false,
@@ -810,28 +845,40 @@ const videoPreview = reactive({
     }
 });
 
-const textModal = reactive({
+// 文本预览组件
+const textPreview = reactive({
     title: "",
     visible: false,
     text: "",
     loading: false,
     fullscreen: false,
     onClose: () => {
-        textModal.title = "";
-        textModal.text = "";
-        textModal.fullscreen = false;
+        textPreview.title = "";
+        textPreview.text = "";
+        textPreview.fullscreen = false;
     },
 });
 
-const computedWidth = useModalWidth();
+const computedWidth = useModalWidth().width;
 
-const textModalWidth = computed(() => textModal.fullscreen ? "100%" : computedWidth.width.value);
+const textPreviewModalWidth = computed(() => textPreview.fullscreen ? "100%" : computedWidth.value);
 
-const textModalBodyStyle = computed(() => ({
-    height: textModal.fullscreen ? undefined : "450px",
+const textPreviewModalBodyStyle = computed(() => ({
+    height: textPreview.fullscreen ? undefined : "450px",
     padding: "0",
     overflow: "hidden"
 }));
+
+// 音频预览组件
+const audioPreview = reactive({
+    title: "",
+    visible: false,
+    srcStr: "",
+    onClose: () => {
+        audioPreview.title = "";
+        audioPreview.srcStr = "";
+    },
+});
 
 </script>
 
@@ -1053,16 +1100,25 @@ const textModalBodyStyle = computed(() => ({
     <VideoPreviewModal :title="videoPreview.title" v-model:visible="videoPreview.visible" :videoSrc="videoPreview.src"
         @close="videoPreview.onClose" />
 
-    <AModal v-model:visible="textModal.visible" :width="textModalWidth" :footer="false" draggable
-        :fullscreen="textModal.fullscreen" :body-style="textModalBodyStyle" @close="textModal.onClose">
-        <TextMonitor :text="textModal.text" :loading="textModal.loading" />
+    <!-- 文本预览组件 -->
+    <AModal v-model:visible="textPreview.visible" :width="textPreviewModalWidth" :footer="false" draggable
+        :fullscreen="textPreview.fullscreen" :body-style="textPreviewModalBodyStyle" @close="textPreview.onClose">
+        <TextMonitor :text="textPreview.text" :loading="textPreview.loading" />
         <template #title>
-            <div class="text-title">{{ textModal.title }}</div>
-            <span class="full-screen-button arco-icon-hover" @click="textModal.fullscreen = !textModal.fullscreen">
-                <i v-if="textModal.fullscreen" class="fa-solid fa-compress arco-icon"></i>
+            <div class="text-title">{{ textPreview.title }}</div>
+            <span class="full-screen-button arco-icon-hover" @click="textPreview.fullscreen = !textPreview.fullscreen">
+                <i v-if="textPreview.fullscreen" class="fa-solid fa-compress arco-icon"></i>
                 <i v-else class="fa-solid fa-expand arco-icon"></i>
             </span>
         </template>
+    </AModal>
+
+    <!-- 音频预览组件 -->
+    <AModal :title="audioPreview.title" v-model:visible="audioPreview.visible" width="auto" :footer="false" draggable
+        @close="audioPreview.onClose">
+        <div class="audio-modal-body">
+            <AudioPalyer :name="audioPreview.title" :src="audioPreview.srcStr" preload="metadata" />
+        </div>
     </AModal>
 </template>
 
@@ -1092,5 +1148,12 @@ const textModalBodyStyle = computed(() => ({
     font-size: 12px;
     position: absolute;
     right: 50px;
+}
+
+.audio-modal-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
 }
 </style>
