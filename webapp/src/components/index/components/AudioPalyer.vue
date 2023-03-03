@@ -278,7 +278,8 @@ function on_audio_player_keydown(ev: KeyboardEvent) {
 
                 <AGridItem class="grid-item item-center " :span="2">
                     <ATrigger position="top" auto-fit-position v-model:popupVisible="volumeBarVisible">
-                        <AButton shape="circle" @click="on_muteButton_click" @contextmenu.prevent="volumeBarVisible = true">
+                        <AButton shape="circle" @click="on_muteButton_click" @contextmenu.prevent="volumeBarVisible = true"
+                            @wheel.stop.prevent="on_volume_wrapper_wheel">
                             <template #icon>
                                 <!-- 静音标记 -->
                                 <i v-if="muted" class="fa-solid fa-volume-slash"></i>
