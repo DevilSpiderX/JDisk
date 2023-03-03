@@ -1,6 +1,5 @@
 package zdy.graduation.design.jdisk.module.virtualFileSystem.controller;
 
-import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -18,10 +17,13 @@ import java.io.IOException;
 @RequestMapping("/api/file/operate")
 public class FileOpController {
     private final Logger logger = LoggerFactory.getLogger(FileOpController.class);
-    @Resource
-    private DriverService driverService;
-    @Resource
-    private FileService fileService;
+    private final DriverService driverService;
+    private final FileService fileService;
+
+    public FileOpController(DriverService driverService, FileService fileService) {
+        this.driverService = driverService;
+        this.fileService = fileService;
+    }
 
     record UpdateRequest(String path,
                          String newName,

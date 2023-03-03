@@ -7,7 +7,7 @@ import { useAppConfigs } from "@/store/AppConfigsStore";
 import { useDriverList, ValueType as DriverType } from "@/store/DriverList";
 import { useSystemConfigs } from "@/store/SystemConfigs";
 import { formatBytes } from "@/util/format-util";
-import { constructPath, getSuffix } from "@/util/paths";
+import { constructPath, getDownloadURL, getSuffix } from "@/util/paths";
 import { getSvgByTypeAndSuffix } from "@/util/svg-util";
 import {
     CustomIcon as ACustomIcon,
@@ -281,7 +281,6 @@ function on_table_row_click(record: ATableData) {
         }
         case FileTypes.file: {
             const file = fileList.value[record.index];
-            console.log(file);
             switch (record.suffixType) {
                 case SuffixTypes.video: {
                     previewVideo(file);
@@ -329,10 +328,10 @@ async function download(file: MyFile) {
         const resp = await http.signature.apply(file.path, driver.value.key);
         if (resp.code === 0) {
             const sign = resp.data;
-            const driverKey = encodeURI(driver.value.key);
-            const filePath = encodeURI(file.path);
-            const downloadLink = `${location.origin}/dl/${driverKey}${filePath}`
-                + (sign === "" ? "" : `?signature=${sign}`);
+            const downloadLink = getDownloadURL(
+                `/dl/${driver.value.key}${file.path}`,
+                { signature: sign === "" ? undefined : sign }
+            );
             window.open(downloadLink);
             return;
         }
@@ -359,12 +358,15 @@ async function previewImages(currentImage: MyFile) {
         const resp = await http.signature.apply(allPath, driver.value.key);
         if (resp.code === 0) {
             const sign = resp.data;
-            const driverKey = encodeURI(driver.value.key);
             for (let i = 0; i < imageList.length; i++) {
                 const img = imageList[i];
-                const imgPath = encodeURI(img.path);
-                imagePreview.srcList.push(`${location.origin}/dl/${driverKey}${imgPath}`
-                    + (sign === "" ? "" : `?signature=${sign}`));
+                imagePreview.srcList.push(getDownloadURL(
+                    `/dl/${driver.value.key}${img.path}`,
+                    {
+                        signature: sign === "" ? undefined : sign,
+                        type: true
+                    }
+                ));
                 if (img === currentImage) {
                     imagePreview.current = i;
                 }
@@ -381,9 +383,13 @@ async function previewVideo(currentVideo: MyFile) {
         const resp = await http.signature.apply(videoPath, driver.value.key);
         if (resp.code === 0) {
             const sign = resp.data;
-            const driverKey = encodeURI(driver.value.key);
-            const videoURL = `${location.origin}/dl/${driverKey}${videoPath}`
-                + (sign === "" ? "" : `?signature=${sign}`);
+            const videoURL = getDownloadURL(
+                `/dl/${driver.value.key}${videoPath}`,
+                {
+                    signature: sign === "" ? undefined : sign,
+                    type: true
+                }
+            );
             videoPreview.title = currentVideo.name;
             videoPreview.src = videoURL;
             videoPreview.visible = true;
@@ -398,9 +404,13 @@ async function previewText(currentVideo: MyFile) {
         const resp = await http.signature.apply(textPath, driver.value.key);
         if (resp.code === 0) {
             const sign = resp.data;
-            const driverKey = encodeURI(driver.value.key);
-            const textURL = `${location.origin}/dl/${driverKey}${textPath}`
-                + (sign === "" ? "" : `?signature=${sign}`);
+            const textURL = getDownloadURL(
+                `/dl/${driver.value.key}${textPath}`,
+                {
+                    signature: sign === "" ? undefined : sign,
+                    type: true
+                }
+            );
             textPreview.title = currentVideo.name;
             textPreview.visible = true;
             textPreview.loading = true;
@@ -420,10 +430,13 @@ async function previewAudio(currentVideo: MyFile) {
         const resp = await http.signature.apply(audioPath, driver.value.key);
         if (resp.code === 0) {
             const sign = resp.data;
-            const driverKey = encodeURI(driver.value.key);
-            const encodeAudioPath = encodeURI(audioPath);
-            const audioURL = `${location.origin}/dl/${driverKey}${encodeAudioPath}`
-                + (sign === "" ? "" : `?signature=${sign}`);
+            const audioURL = getDownloadURL(
+                `/dl/${driver.value.key}${audioPath}`,
+                {
+                    signature: sign === "" ? undefined : sign,
+                    type: true
+                }
+            );
             audioPreview.title = currentVideo.name;
             audioPreview.srcStr = audioURL;
             audioPreview.visible = true;
@@ -1117,7 +1130,7 @@ const audioPreview = reactive({
     <AModal :title="audioPreview.title" v-model:visible="audioPreview.visible" width="auto" :footer="false" draggable
         @close="audioPreview.onClose">
         <div class="audio-modal-body">
-            <AudioPalyer :name="audioPreview.title" :src="audioPreview.srcStr" preload="metadata" />
+            <AudioPalyer :name="audioPreview.title" :src="audioPreview.srcStr" preload="metadata" autoplay />
         </div>
     </AModal>
 </template>

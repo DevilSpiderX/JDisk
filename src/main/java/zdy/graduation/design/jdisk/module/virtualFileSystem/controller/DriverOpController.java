@@ -1,6 +1,5 @@
 package zdy.graduation.design.jdisk.module.virtualFileSystem.controller;
 
-import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -17,8 +16,11 @@ import java.util.Map;
 @RequestMapping("/api/driver/operate")
 public class DriverOpController {
     private final Logger logger = LoggerFactory.getLogger(DriverOpController.class);
-    @Resource
-    private DriverService driverService;
+    private final DriverService driverService;
+
+    public DriverOpController(DriverService driverService) {
+        this.driverService = driverService;
+    }
 
     record AddRequest(String name,
                       String key,

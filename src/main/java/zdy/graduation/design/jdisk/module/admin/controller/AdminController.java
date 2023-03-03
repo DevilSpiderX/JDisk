@@ -1,6 +1,5 @@
 package zdy.graduation.design.jdisk.module.admin.controller;
 
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -23,8 +22,11 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 public class AdminController {
     private final Logger logger = LoggerFactory.getLogger(AdminController.class);
-    @Resource
-    private AdminService adminService;
+    private final AdminService adminService;
+
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
+    }
 
     record LoginRequest(String username, String password) {
     }

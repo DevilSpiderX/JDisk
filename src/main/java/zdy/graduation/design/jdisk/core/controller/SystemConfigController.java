@@ -1,6 +1,5 @@
 package zdy.graduation.design.jdisk.core.controller;
 
-import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,8 +17,11 @@ import java.util.regex.Pattern;
 @Controller
 @RequestMapping("/api/system/config")
 public class SystemConfigController {
-    @Resource
-    private SystemConfigService systemConfigService;
+    private final SystemConfigService systemConfigService;
+
+    public SystemConfigController(SystemConfigService systemConfigService) {
+        this.systemConfigService = systemConfigService;
+    }
 
     @RequestMapping("/list")
     @ResponseBody

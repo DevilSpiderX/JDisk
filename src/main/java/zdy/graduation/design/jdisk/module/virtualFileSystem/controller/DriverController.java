@@ -1,6 +1,5 @@
 package zdy.graduation.design.jdisk.module.virtualFileSystem.controller;
 
-import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -13,8 +12,11 @@ import java.util.List;
 @Controller
 @RequestMapping("/api/driver")
 public class DriverController {
-    @Resource
-    private DriverService driverService;
+    private final DriverService driverService;
+
+    public DriverController(DriverService driverService) {
+        this.driverService = driverService;
+    }
 
     @RequestMapping("/list")
     @ResponseBody

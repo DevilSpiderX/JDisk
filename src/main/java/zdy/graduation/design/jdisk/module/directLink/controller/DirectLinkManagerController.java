@@ -1,6 +1,5 @@
 package zdy.graduation.design.jdisk.module.directLink.controller;
 
-import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import zdy.graduation.design.jdisk.core.service.SystemConfigService;
@@ -17,12 +16,15 @@ import java.util.Map;
 @Controller
 @RequestMapping("/api/direct/link")
 public class DirectLinkManagerController {
-    @Resource
-    private DirectLinkService directLinkService;
-    @Resource
-    private DriverService driverService;
-    @Resource
-    private SystemConfigService systemConfigService;
+    private final DirectLinkService directLinkService;
+    private final DriverService driverService;
+    private final SystemConfigService systemConfigService;
+
+    public DirectLinkManagerController(DirectLinkService directLinkService, DriverService driverService, SystemConfigService systemConfigService) {
+        this.directLinkService = directLinkService;
+        this.driverService = driverService;
+        this.systemConfigService = systemConfigService;
+    }
 
     @RequestMapping("/list")
     @ResponseBody

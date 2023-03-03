@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue';
+import { computed, ref, watch, watchEffect } from 'vue';
 
 interface Props {
     name?: string,
@@ -26,12 +26,20 @@ const loading = ref(false);
 const audioRef = ref<HTMLAudioElement | null>(null);
 
 function play() {
-    audioRef.value?.play();
+    if (audioRef.value && audioRef.value.readyState > 0) {
+        audioRef.value?.play();
+    }
 }
 
 function pause() {
     audioRef.value?.pause();
 }
+
+watchEffect(() => {
+    if (props.src && props.src !== "" && audioRef.value) {
+        loading.value = true;
+    }
+});
 
 const defaultCurrentTime = ref(0);
 
@@ -43,14 +51,15 @@ const _currentTime = computed({
     }
 });
 
-let timeoutId: NodeJS.Timeout | undefined = undefined;
+const timeoutId = ref<NodeJS.Timeout>();
 
 function setCurrentTime(sec: number) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
+    clearTimeout(timeoutId.value);
+    timeoutId.value = setTimeout(() => {
         if (audioRef.value) {
+            audioRef.value.currentTime = sec;
             _currentTime.value = sec;
-            // console.log("设置当前播放时间为：", sec);
+            timeoutId.value = undefined;
         }
     }, 300);
 }
@@ -77,20 +86,17 @@ function on_duration_change() {
     }
 }
 
+function on_loaded_metadata() {
+    loading.value = false;
+    if (audioRef.value) {
+        audioRef.value.currentTime = 0;
+    }
+}
+
 const paused = ref(true);
 
-watchEffect(async () => {
-    if (props.src && props.src !== "" && audioRef.value) {
-        loading.value = true;
-        _currentTime.value = 0;
-        if (props.autoplay) {
-            play();
-        } else {
-            pause();
-        }
-    }
+watchEffect(() => {
     if (props.src === undefined || props.src === "") {
-        pause();
         paused.value = true;
     }
 });
@@ -152,16 +158,43 @@ function on_volume_wrapper_wheel(ev: WheelEvent) {
 
 const volumeBarVisible = ref(false);
 
+let lastVolumeSliderTouches: TouchList | undefined = undefined;
+
+function on_volume_slider_touchstart(ev: TouchEvent) {
+    lastVolumeSliderTouches = ev.touches;
+}
+
+function on_volume_slider_touchend() {
+    lastVolumeSliderTouches = undefined
+}
+
+function on_volume_slider_touchmove(ev: TouchEvent) {
+    const touches = ev.touches;
+    const px2Sec = 100 / 100;
+    if (lastVolumeSliderTouches) {
+        const newY = touches[0].clientY;
+        const oldY = lastVolumeSliderTouches[0].clientY;
+        const neg = newY > oldY;
+        const moveY = Math.abs(newY - oldY);
+        if (neg) {
+            setVolumeProgress(volumeProgress.value - moveY * px2Sec);
+        } else {
+            setVolumeProgress(volumeProgress.value + moveY * px2Sec);
+        }
+    }
+    lastVolumeSliderTouches = touches;
+}
+
 const playProgressTemp = ref<number | undefined>(undefined);
 
+watch(timeoutId, id => {
+    if (id === undefined) {
+        playProgressTemp.value = undefined;
+    }
+});
+
 const playProgress = computed({
-    get: () => {
-        const result = playProgressTemp.value ?? _currentTime.value;
-        if (playProgressTemp.value === _currentTime.value) {
-            playProgressTemp.value = undefined
-        }
-        return result;
-    },
+    get: () => playProgressTemp.value ?? _currentTime.value,
     set: newValue => {
         let value = newValue;
         if (value < 0) {
@@ -174,8 +207,31 @@ const playProgress = computed({
     }
 });
 
-function playProgressFormatter(value: number) {
-    return secToTime(value);
+let lastPlaySliderTouches: TouchList | undefined = undefined;
+
+function on_play_slider_touchstart(ev: TouchEvent) {
+    lastPlaySliderTouches = ev.touches;
+}
+
+function on_play_slider_touchend() {
+    lastPlaySliderTouches = undefined
+}
+
+function on_play_slider_touchmove(ev: TouchEvent) {
+    const touches = ev.touches;
+    const px2Sec = _duration.value / 300;
+    if (lastPlaySliderTouches) {
+        const newX = touches[0].clientX;
+        const oldX = lastPlaySliderTouches[0].clientX;
+        const neg = newX < oldX;
+        const moveX = Math.abs(newX - oldX);
+        if (neg) {
+            playProgress.value -= (moveX * px2Sec);
+        } else {
+            playProgress.value += (moveX * px2Sec);
+        }
+    }
+    lastPlaySliderTouches = touches;
 }
 
 function on_audio_player_keydown(ev: KeyboardEvent) {
@@ -192,24 +248,24 @@ function on_audio_player_keydown(ev: KeyboardEvent) {
     } else if (key === "ArrowLeft") {
         volumeBarVisible.value = false;
         playProgress.value -= 1;
+    } else if (key === " ") {
+        on_playbutton_click();
     }
 }
-
-const print = console.log
 
 </script>
 
 <template>
     <ASpin :loading="loading">
         <div class="audio-outer" tabindex="-1" @keydown="on_audio_player_keydown">
-            <audio ref="audioRef" :src="src" :currentTime="_currentTime" :autoplay="autoplay" :muted="muted"
-                :volume="volume" @timeupdate="on_time_update" @durationchange="on_duration_change" @play="paused = false"
-                @pause="paused = true" @loadedmetadata="loading = false" />
-            <AGrid class="audio-wrapper" :cols="8" :row-gap="10" :col-gap="12">
+            <audio ref="audioRef" v-bind="{ src, autoplay, muted, volume }" @play="paused = false" @pause="paused = true"
+                @timeupdate="on_time_update" @durationchange="on_duration_change" @loadedmetadata="on_loaded_metadata" />
+
+            <AGrid class="audio-wrapper" :cols="8" :col-gap="10" :row-gap="10">
                 <AGridItem class="grid-item" :span="8">{{ name }}</AGridItem>
 
                 <AGridItem class="grid-item item-center " :span="2">
-                    <AButton shape="circle" @click="on_playbutton_click">
+                    <AButton shape="circle" @click="on_playbutton_click" @contextmenu.prevent="on_playbutton_click">
                         <template #icon>
                             <i v-if="paused" class="fa-solid fa-play"></i>
                             <i v-else class="fa-solid fa-pause"></i>
@@ -218,12 +274,12 @@ const print = console.log
                 </AGridItem>
 
                 <AGridItem class="grid-item item-center  time-display" :span="4">
-                    {{ secToTime(_currentTime) }} / {{ secToTime(_duration) }}
+                    {{ secToTime(playProgressTemp ?? _currentTime) }} / {{ secToTime(_duration) }}
                 </AGridItem>
 
                 <AGridItem class="grid-item item-center " :span="2">
                     <ATrigger position="top" auto-fit-position v-model:popupVisible="volumeBarVisible">
-                        <AButton shape="circle" @click="on_muteButton_click">
+                        <AButton shape="circle" @click="on_muteButton_click" @contextmenu.prevent="volumeBarVisible = true">
                             <template #icon>
                                 <!-- 静音标记 -->
                                 <i v-if="muted" class="fa-solid fa-volume-slash"></i>
@@ -238,16 +294,21 @@ const print = console.log
                             </template>
                         </AButton>
                         <template #content>
-                            <div class="volume-wrapper" @wheel.stop.prevent="on_volume_wrapper_wheel">
+                            <div class="volume-wrapper" @wheel.stop.prevent="on_volume_wrapper_wheel"
+                                @touchstart="on_volume_slider_touchstart" @touchmove.prevent="on_volume_slider_touchmove"
+                                @touchend="on_volume_slider_touchend">
                                 <ASlider class="volume-slider" v-model="volumeProgress" direction="vertical"
-                                    @change="on_volume_slider_change" />
+                                    :show-tooltip="false" @change="on_volume_slider_change" />
                             </div>
                         </template>
                     </ATrigger>
                 </AGridItem>
 
-                <AGridItem class="grid-item item-center" :span="8">
-                    <ASlider v-model="playProgress" :max="_duration" :format-tooltip="playProgressFormatter" />
+                <AGridItem class="grid-item" :span="8">
+                    <div class="progress-slider-outer item-center" @touchstart="on_play_slider_touchstart"
+                        @touchmove.prevent="on_play_slider_touchmove" @touchend="on_play_slider_touchend">
+                        <ASlider v-model="playProgress" :max="_duration" :show-tooltip="false" />
+                    </div>
                 </AGridItem>
             </AGrid>
         </div>
@@ -257,7 +318,7 @@ const print = console.log
 <style scoped>
 .audio-outer {
     width: 300px;
-    height: 100px;
+    height: 116px;
     padding: 20px;
     background-color: var(--color-bg-2);
     border: 1px solid var(--color-border-2);
@@ -304,5 +365,10 @@ const print = console.log
 
 .time-display {
     font-size: 18px;
+}
+
+.progress-slider-outer {
+    width: 100%;
+    height: 100%;
 }
 </style>

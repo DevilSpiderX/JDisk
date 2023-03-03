@@ -1,6 +1,5 @@
 package zdy.graduation.design.jdisk.module.signature.controller;
 
-import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,10 +13,13 @@ import zdy.graduation.design.jdisk.module.virtualFileSystem.service.DriverServic
 @Controller
 @RequestMapping("/api/signature")
 public class SignatureController {
-    @Resource
-    private DriverService driverService;
-    @Resource
-    private SignatureService signatureService;
+    private final DriverService driverService;
+    private final SignatureService signatureService;
+
+    public SignatureController(DriverService driverService, SignatureService signatureService) {
+        this.driverService = driverService;
+        this.signatureService = signatureService;
+    }
 
     record ApplyRequest(String path, String driverKey) {
     }
