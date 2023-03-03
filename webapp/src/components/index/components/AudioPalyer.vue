@@ -170,16 +170,15 @@ function on_volume_slider_touchend() {
 
 function on_volume_slider_touchmove(ev: TouchEvent) {
     const touches = ev.touches;
-    const px2Sec = 100 / 100;
     if (lastVolumeSliderTouches) {
         const newY = touches[0].clientY;
         const oldY = lastVolumeSliderTouches[0].clientY;
         const neg = newY > oldY;
         const moveY = Math.abs(newY - oldY);
         if (neg) {
-            setVolumeProgress(volumeProgress.value - moveY * px2Sec);
+            setVolumeProgress(volumeProgress.value - moveY);
         } else {
-            setVolumeProgress(volumeProgress.value + moveY * px2Sec);
+            setVolumeProgress(volumeProgress.value + moveY);
         }
     }
     lastVolumeSliderTouches = touches;

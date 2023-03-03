@@ -16,6 +16,7 @@ import {
     Message,
     Modal,
     RequestOption as ARequestOption,
+    Scrollbar as AScrollbar,
     Table as ATable,
     TableColumnData as ATableColumnData,
     TableData as ATableData,
@@ -908,13 +909,15 @@ const audioPreview = reactive({
                     </ARow>
                 </template>
                 <template #breadcrumb>
-                    <ABreadcrumb>
-                        <ABreadcrumbItem v-for="route of breadcrumbRoutes">
-                            <RouterLink :to="route.path">
-                                {{ route.label }}
-                            </RouterLink>
-                        </ABreadcrumbItem>
-                    </ABreadcrumb>
+                    <AScrollbar class="breadcrumb-scrollbar" outer-class="breadcrumb-scrollbar-outer">
+                        <ABreadcrumb>
+                            <ABreadcrumbItem v-for="route of breadcrumbRoutes">
+                                <RouterLink :to="route.path">
+                                    {{ route.label }}
+                                </RouterLink>
+                            </ABreadcrumbItem>
+                        </ABreadcrumb>
+                    </AScrollbar>
                 </template>
                 <template #extra>
                     <ASpace v-if="appConfigs.client.width >= 768" size="large">
@@ -958,6 +961,7 @@ const audioPreview = reactive({
                             </AOption>
                         </ASelect>
                     </ASpace>
+
                     <ADropdown v-else>
                         <AButton>
                             <template #icon>
@@ -997,6 +1001,7 @@ const audioPreview = reactive({
                 </template>
             </APageHeader>
         </ALayoutHeader>
+
         <ALayoutContent style="height: 1px">
             <ATable class="file-table" :columns="tableColumns" :data="tableData" row-key="index" :pagination="false"
                 :loading="tableLoading" @row-click="on_table_row_click" :scroll="{ y: '100%' }" ref="fileTableRef"
@@ -1062,7 +1067,8 @@ const audioPreview = reactive({
     </ADrawer>
 
     <!-- 新建文件夹模态框 -->
-    <AModal title="新建文件夹" v-model:visible="mkdirModal.visible" @ok="on_mkdirModal_ok" :width="400">
+    <AModal title="新建文件夹" v-model:visible="mkdirModal.visible" @ok="on_mkdirModal_ok" :width="400"
+        @close="mkdirModal.form.dirName = ''">
         <AForm :model="mkdirModal.form" layout="vertical" label-align="left">
             <AFormItem field="dirName" label="文件夹名" required>
                 <AInput v-model="mkdirModal.form.dirName">
@@ -1138,6 +1144,15 @@ const audioPreview = reactive({
 <style scoped>
 .page-header {
     border-bottom: 1px solid var(--color-border-2);
+}
+
+.breadcrumb-scrollbar-outer,
+.breadcrumb-scrollbar-outer :deep(.breadcrumb-scrollbar) {
+    width: 100%;
+}
+
+.breadcrumb-scrollbar-outer :deep(.breadcrumb-scrollbar) {
+    overflow: auto;
 }
 
 .file-table :deep(tbody .arco-table-tr) {
