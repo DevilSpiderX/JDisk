@@ -318,7 +318,7 @@ function on_table_row_click(record: ATableData) {
         case FileTypes.driver: {
             const driver = driverList.value[record.index];
             router.push("/" + driver.key);
-            break; 0;
+            break;
         }
     }
 }
@@ -510,8 +510,7 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                 if (props.driverKey) {
                     const fileNames: Array<string> = [];
                     const paths: Array<string> = [];
-                    for (let i = 0; i < selectedRowKeys.length; i++) {
-                        const index = selectedRowKeys[i];
+                    for (const index of selectedRowKeys) {
                         if (typeof index === "number") {
                             const file = fileList.value[index];
                             fileNames.push(file.name);
@@ -543,12 +542,13 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
                 onOk: async () => {
                     tableLoading.value = true;
                     if (props.driverKey) {
-                        for (let i = 0; i < selectedRowKeys.length; i++) {
-                            const index = selectedRowKeys[i];
+                        const paths = [];
+                        for (const index of selectedRowKeys) {
                             if (typeof index === "number") {
-                                await http.file.operate.remove(fileList.value[index].path, props.driverKey);
+                                paths.push(fileList.value[index].path);
                             }
                         }
+                        await http.file.operate.removeBatch(paths, props.driverKey);
                         await updateFileList(props.driverKey, directoryPath.value);
                     }
                     tableLoading.value = false;
@@ -562,8 +562,8 @@ function on_table_tr_contextmenu(record: MyTableData, rowIndex: number, event: P
         tableMenu.menuItems.open.hidden = record.type !== FileTypes.directory;
         tableMenu.menuItems.download.hidden = record.type !== FileTypes.file;
         tableMenu.menuItems.directLink.hidden = record.type !== FileTypes.file;
-        tableMenu.menuItems.rename.hidden = !adminStatus.value;
-        tableMenu.menuItems.delete.hidden = !adminStatus.value;
+        tableMenu.menuItems.rename.hidden = !adminStatus.value || record.type === FileTypes.back || record.type === FileTypes.driver;
+        tableMenu.menuItems.delete.hidden = !adminStatus.value || record.type === FileTypes.back || record.type === FileTypes.driver;
         tableMenu.menuItems.delete.label = "删除";
 
         const file = fileList.value[record.index];
@@ -759,16 +759,29 @@ async function on_renamerModal_ok() {
 const uploadMoadl = reactive<{
     visible: boolean,
     fileList: Array<AFileItem>,
-    onClose: () => void,
+    onBeforeClose: () => void,
     customIcon: ACustomIcon;
 }>({
     visible: false,
     fileList: [],
-    onClose: () => {
+    onBeforeClose: () => {
         if (props.driverKey) {
             updateFileList(props.driverKey, directoryPath.value);
         }
-        uploadMoadl.fileList = [];
+        clearCompletedUploadTasks();
+        if (fileUploading.uploading.size !== 0 || fileUploading.waiting.length !== 0) {
+            Modal.confirm({
+                content: "是否取消所有上传任务？",
+                width: "300px",
+                onOk: () => {
+                    fileUploading.waiting = [];
+                    fileUploading.uploading.forEach(item => {
+                        cancelUploadFileItem(item);
+                    });
+                    uploadMoadl.fileList = [];
+                }
+            });
+        }
     },
     customIcon: {
         fileIcon: (fileItem: AFileItem) => {
@@ -777,6 +790,10 @@ const uploadMoadl = reactive<{
         }
     }
 });
+
+function clearCompletedUploadTasks() {
+    uploadMoadl.fileList = uploadMoadl.fileList.filter(item => item.status === "init" || item.status === "uploading");
+}
 
 function uploadModalCustomRequest(option: ARequestOption) {
     const { onProgress, onError, onSuccess, fileItem } = option;
@@ -812,33 +829,47 @@ function uploadModalCustomRequest(option: ARequestOption) {
     };
 }
 
-const uploadingList = ref<Array<AFileItem>>([]);
-const waitingList = ref<Array<AFileItem>>([]);
+const fileUploading = reactive<{
+    uploading: Map<string, AFileItem>,
+    waiting: Array<AFileItem>
+}>({
+    uploading: new Map(),
+    waiting: []
+});
 const uploadRef = ref<InstanceType<typeof AUpload> | null>(null);
 
 function uploadFileItem(item: AFileItem) {
-    if (uploadRef.value) {
-        uploadRef.value.submit(item);
-        uploadingList.value.push(item);
-    }
+    uploadRef.value?.submit(item);
+}
+
+function cancelUploadFileItem(item: AFileItem) {
+    uploadRef.value?.abort(item);
 }
 
 function on_fileItme_status_change(_: Array<AFileItem>, item: AFileItem) {
     const maxFileUploads = systemConfigs.values.maxFileUploads;
-    if (item.status === "init") {
-        if (uploadingList.value.length < maxFileUploads) {
-            uploadFileItem(item);
-        } else {
-            waitingList.value.push(item);
+    switch (item.status) {
+        case "init": {
+            if (fileUploading.uploading.size < maxFileUploads) {
+                uploadFileItem(item);
+            } else {
+                fileUploading.waiting.push(item);
+            }
+            break;
         }
-    }
-    if (item.status === "done" || item.status === "error") {
-        const index = uploadingList.value.indexOf(item);
-        uploadingList.value.splice(index, 1);
+        case "uploading": {
+            fileUploading.uploading.set(item.uid, item);
+            break;
+        }
+        case "done":
+        case "error": {
+            fileUploading.uploading.delete(item.uid);
 
-        const wItem = waitingList.value.shift();
-        if (wItem) {
-            uploadFileItem(wItem);
+            const wItem = fileUploading.waiting.shift();
+            if (wItem) {
+                uploadFileItem(wItem);
+            }
+            break;
         }
     }
 }
@@ -1028,19 +1059,7 @@ const audioPreview = reactive({
         :style="tableMenu.style" :z-index="1002" />
 
     <!-- 设置抽屉 -->
-    <ADrawer v-model:visible="drawer.visible" :footer="false">
-        <template #header>
-            <ARow justify="space-between" style="width: 100%;">
-                <h2 style="margin: 0">
-                    更多设置
-                </h2>
-                <AButton class="drawer-close-button" shape="circle" size="small" @click="drawer.visible = false">
-                    <template #icon>
-                        <IconClose />
-                    </template>
-                </AButton>
-            </ARow>
-        </template>
+    <ADrawer title="更多设置" v-model:visible="drawer.visible" :footer="false">
         <AForm :model="drawer.empty_form" auto-label-width>
             <template v-if="appConfigs.client.width < 768">
                 <h3 style="color: var(--color-text-2)">
@@ -1106,7 +1125,7 @@ const audioPreview = reactive({
 
     <!-- 文件上传模态框 -->
     <AModal title="上传文件" v-model:visible="uploadMoadl.visible" width="90%" :footer="false" draggable
-        @close="uploadMoadl.onClose">
+        @before-close="uploadMoadl.onBeforeClose">
         <AUpload v-model:file-list="uploadMoadl.fileList" ref="uploadRef" multiple draggable
             :custom-request="uploadModalCustomRequest" :auto-upload="false" :custom-icon="uploadMoadl.customIcon"
             @change="on_fileItme_status_change" />

@@ -12,6 +12,8 @@ import zdy.graduation.design.jdisk.module.virtualFileSystem.service.DriverServic
 import zdy.graduation.design.jdisk.module.virtualFileSystem.service.FileService;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 @RequestMapping("/api/file/operate")
@@ -65,6 +67,33 @@ public class FileOpController {
         try {
             boolean flag = fileService.removeFile(reqBody.path(), driver);
             return flag ? AjaxResp.success() : AjaxResp.failure();
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+            return AjaxResp.error(e.getMessage());
+        }
+    }
+
+    record RemoveBatchRequest(String[] paths, String driverKey) {
+    }
+
+    @PostMapping("/removeBatch")
+    @ResponseBody
+    public AjaxResp<?> removeBatch(@RequestBody RemoveBatchRequest reqBody) throws OperationNotAllowed {
+        final VirtualDriver driver = driverService.getDriver(reqBody.driverKey());
+        if (driver == null) {
+            return AjaxResp.error("驱动器%s不存在".formatted(reqBody.driverKey()));
+        }
+
+        try {
+            List<String> failurePaths = new ArrayList<>();
+            for (String path : reqBody.paths()) {
+                boolean flag = fileService.removeFile(path, driver);
+                if (!flag) {
+                    failurePaths.add(path);
+                }
+            }
+            return failurePaths.size() == 0 ? AjaxResp.success() :
+                    AjaxResp.of(AjaxResp.CODE_FAILURE, "Failure").setData(failurePaths);
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
             return AjaxResp.error(e.getMessage());

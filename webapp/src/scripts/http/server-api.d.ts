@@ -57,6 +57,7 @@ export interface Http {
         operate: {
             update: (path: string, newName: string, newParent: string, driverKey: string) => Promise<Resp>,
             remove: (path: string, driverKey: string) => Promise<Resp>,
+            removeBatch: (paths: string[], driverKey: string) => Promise<Resp>,
             mkdir: (name: string, parent: string, driverKey: string) => Promise<Resp>,
             upload: (
                 driverKey: string,

@@ -118,6 +118,10 @@ const http = {
                 const resp = await httpInstance.post("/api/file/operate/remove", { path, driverKey });
                 return resp.data;
             },
+            async removeBatch(paths, driverKey) {
+                const resp = await httpInstance.post("/api/file/operate/removeBatch", { paths, driverKey });
+                return resp.data;
+            },
             async mkdir(name, parent, driverKey) {
                 const resp = await httpInstance.post("/api/file/operate/mkdir", { name, parent, driverKey });
                 return resp.data;
