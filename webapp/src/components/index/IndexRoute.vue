@@ -768,6 +768,7 @@ const uploadMoadl = reactive<{
         if (props.driverKey) {
             updateFileList(props.driverKey, directoryPath.value);
         }
+        uploadMoadl.fileList = [];
     },
     customIcon: {
         fileIcon: (fileItem: AFileItem) => {
@@ -878,7 +879,7 @@ const computedWidth = useModalWidth().width;
 const textPreviewModalWidth = computed(() => textPreview.fullscreen ? "100%" : computedWidth.value);
 
 const textPreviewModalBodyStyle = computed(() => ({
-    height: textPreview.fullscreen ? undefined : "450px",
+    height: textPreview.fullscreen ? "100%" : "450px",
     padding: "0",
     overflow: "hidden"
 }));
